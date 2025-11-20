@@ -1,0 +1,8 @@
+{
+  "name": "Gemini Powered Task Manager",
+  "description": "A smart to-do list application powered by the Gemini API. It features deadline tracking, subtasks, custom categories, and integrated AI tools like a contextual chatbot for each task and a grounded search for explaining complex topics.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
