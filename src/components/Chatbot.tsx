@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, MessageAuthor, ToDoItem } from '../types';
 import { streamTaskChat } from '../services/geminiService';
-import { UserIcon, SparkleIcon, SendIcon, MessageIcon } from './IconComponents';
+import { UserIcon, SparkleIcon, SendIcon, MessageIcon, SyncIcon } from './IconComponents';
 
 interface ChatbotProps {
     selectedTaskId: number | null;
@@ -13,101 +13,48 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
         const saved = localStorage.getItem('taskChatHistories');
         return saved ? JSON.parse(saved) : {};
     });
-
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<boolean>(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const activeTask = tasks.find(t => t.id === selectedTaskId);
     const currentMessages = selectedTaskId ? allHistories[selectedTaskId] || [] : [];
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
+    const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     useEffect(scrollToBottom, [currentMessages]);
-
-    useEffect(() => {
-        localStorage.setItem('taskChatHistories', JSON.stringify(allHistories));
-    }, [allHistories]);
-
-    // Function to build a detailed context string about the current state of the task
-    const buildTaskContext = (task: ToDoItem) => {
-        let context = `[CURRENT TASK DATA]\n`;
-        context += `Title: ${task.text}\n`;
-        context += `Category: ${task.category}\n`;
-        context += `Priority: ${task.priority}\n`;
-        context += `Status: ${task.completed ? 'Completed' : 'Pending'}\n`;
-        context += `Deadline: ${task.deadline ? new Date(task.deadline).toLocaleString() : 'None'}\n`;
-        
-        context += `Notes: ${task.notes ? task.notes : 'None'}\n`;
-        
-        if (task.subtasks && task.subtasks.length > 0) {
-            context += `Subtasks:\n${task.subtasks.map(s => `- [${s.completed ? 'x' : ' '}] ${s.text}`).join('\n')}\n`;
-        } else {
-            context += `Subtasks: None\n`;
-        }
-
-        if (task.attachments && task.attachments.length > 0) {
-            context += `Attachments: ${task.attachments.map(a => a.name).join(', ')}\n`;
-        } else {
-            context += `Attachments: None\n`;
-        }
-
-        context += `[END TASK DATA]\n\n`;
-        return context;
-    };
+    useEffect(() => localStorage.setItem('taskChatHistories', JSON.stringify(allHistories)), [allHistories]);
 
     const handleSend = async () => {
         if (!input.trim() || isLoading || !selectedTaskId) return;
-
-        const userMessage: ChatMessage = { author: MessageAuthor.USER, text: input };
-        const newMessagesForTask = [...currentMessages, userMessage];
-        
-        setAllHistories(prev => ({...prev, [selectedTaskId]: newMessagesForTask}));
+        const userMsg: ChatMessage = { author: MessageAuthor.USER, text: input };
+        const newHistory = [...currentMessages, userMsg];
+        setAllHistories(prev => ({ ...prev, [selectedTaskId]: newHistory }));
         setInput('');
         setIsLoading(true);
-        
-        const aiMessage: ChatMessage = { author: MessageAuthor.AI, text: '' };
-        setAllHistories(prev => ({...prev, [selectedTaskId]: [...newMessagesForTask, aiMessage]}));
+        setError(false);
 
         try {
-            // Construct the payload. 
-            // We send the current task context + the user's message hidden in the prompt.
-            // This ensures the AI always knows the *current* name, notes, etc., even if they changed.
-            let messageToSend = input;
+            setAllHistories(prev => ({ ...prev, [selectedTaskId]: [...newHistory, { author: MessageAuthor.AI, text: '' }] }));
+            // Fallback context if task details are missing
+            const context = activeTask ? `Context: Task "${activeTask.text}" (Category: ${activeTask.category}).` : '';
+            const prompt = `${context} User asks: ${input}`;
             
-            if (activeTask) {
-                const context = buildTaskContext(activeTask);
-                messageToSend = `${context}User Question: ${input}\n(Answer concisely based on the Current Task Data above.)`;
-            }
-
-            const stream = streamTaskChat(selectedTaskId, newMessagesForTask, messageToSend);
-            let aiResponseText = '';
+            const stream = streamTaskChat(selectedTaskId, newHistory, prompt);
+            let fullResponse = "";
             for await (const chunk of stream) {
-                aiResponseText += chunk;
+                fullResponse += chunk;
                 setAllHistories(prev => {
-                    const currentTaskHistory = prev[selectedTaskId] || [];
-                    const lastMessage = currentTaskHistory[currentTaskHistory.length - 1];
-                    if (lastMessage && lastMessage.author === MessageAuthor.AI) {
-                        const updatedMessages = [...currentTaskHistory.slice(0, -1)];
-                        updatedMessages.push({ ...lastMessage, text: aiResponseText });
-                        return {...prev, [selectedTaskId]: updatedMessages};
-                    }
-                    return prev;
+                    const history = prev[selectedTaskId] || [];
+                    return { ...prev, [selectedTaskId]: [...history.slice(0, -1), { author: MessageAuthor.AI, text: fullResponse }] };
                 });
             }
-        } catch (error) {
-            console.error("Chat error:", error);
-             setAllHistories(prev => {
-                const currentTaskHistory = prev[selectedTaskId] || [];
-                const lastMessage = currentTaskHistory[currentTaskHistory.length - 1];
-                if (lastMessage && lastMessage.author === MessageAuthor.AI) {
-                    const updatedMessages = [...currentTaskHistory.slice(0, -1)];
-                    updatedMessages.push({ ...lastMessage, text: "Извините, произошла ошибка." });
-                    return {...prev, [selectedTaskId]: updatedMessages};
-                }
-                return prev;
+        } catch (err) {
+            console.error("Chatbot Error:", err);
+            setError(true);
+            setAllHistories(prev => {
+                 const history = prev[selectedTaskId] || [];
+                 return { ...prev, [selectedTaskId]: [...history.slice(0, -1), { author: MessageAuthor.AI, text: "⚠️ Не удалось подключиться к AI. Проверьте API ключ." }] };
             });
         } finally {
             setIsLoading(false);
@@ -115,59 +62,65 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <h2 className="text-2xl font-bold mb-4 truncate">
-                {activeTask ? `Чат: ${activeTask.text}` : 'Чат задачи'}
-            </h2>
+        <div className="flex flex-col h-full glass-panel rounded-3xl overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-brand-gray-700 bg-brand-surface flex justify-between items-center">
+                <h2 className="font-bold text-lg text-brand-text-primary truncate pr-2">{activeTask ? activeTask.text : 'AI Ассистент'}</h2>
+                {activeTask && <span className="text-[10px] bg-brand-primary/20 text-brand-primary px-2 py-1 rounded uppercase font-bold tracking-wide">Gemini</span>}
+            </div>
             
-            <div className="flex-grow overflow-y-auto bg-gray-800/50 p-4 rounded-lg mb-4">
+            {/* Messages */}
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-brand-background/40">
                 {!activeTask ? (
-                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary">
-                        <MessageIcon className="w-12 h-12 mb-4" />
-                        <p>Выберите задачу и нажмите иконку чата, чтобы начать общение.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary opacity-50 text-center">
+                        <MessageIcon className="w-12 h-12 mb-3" />
+                        <p>Выберите задачу, чтобы обсудить её</p>
                     </div>
                 ) : currentMessages.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-brand-text-secondary text-center p-4">
-                         <p>Спросите меня о <strong>"{activeTask.text}"</strong>!<br/>Я вижу ваши подзадачи, заметки и вложения.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary opacity-70 text-center p-6">
+                        <SparkleIcon className="w-8 h-8 mb-2 text-brand-accent" />
+                        <p className="text-sm">Я могу помочь с планом действий или подзадачами.</p>
                     </div>
                 ) : (
-                    currentMessages.map((msg, index) => (
-                        <div key={index} className={`flex items-start gap-3 mb-4 ${msg.author === MessageAuthor.USER ? 'justify-end' : 'justify-start'}`}>
-                            {msg.author === MessageAuthor.AI && (
-                                <div className="bg-brand-primary rounded-full p-2 flex-shrink-0">
-                                    <SparkleIcon className="w-5 h-5 text-white" />
-                                </div>
-                            )}
-                            <div className={`max-w-[85%] md:max-w-[75%] px-4 py-2 rounded-xl whitespace-pre-wrap ${msg.author === MessageAuthor.USER ? 'bg-blue-600 text-white rounded-br-none' : 'bg-gray-700 text-brand-text-primary rounded-bl-none'}`}>
-                               {msg.text || <span className="animate-pulse">...</span>}
+                    currentMessages.map((msg, idx) => (
+                        <div key={idx} className={`flex gap-3 ${msg.author === MessageAuthor.USER ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.author === MessageAuthor.AI ? 'bg-brand-primary text-white' : 'bg-brand-gray-800 text-brand-text-secondary'}`}>
+                                {msg.author === MessageAuthor.AI ? <SparkleIcon className="w-4 h-4"/> : <UserIcon className="w-4 h-4"/>}
                             </div>
-                            {msg.author === MessageAuthor.USER && (
-                                 <div className="bg-gray-600 rounded-full p-2 flex-shrink-0">
-                                    <UserIcon className="w-5 h-5 text-white" />
-                                </div>
-                            )}
+                            <div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed shadow-sm ${
+                                msg.author === MessageAuthor.USER 
+                                ? 'bg-brand-primary text-white rounded-tr-none' 
+                                : 'bg-brand-surface text-brand-text-primary rounded-tl-none border border-brand-gray-700'
+                            }`}>
+                                {msg.text}
+                            </div>
                         </div>
                     ))
                 )}
                 <div ref={messagesEndRef} />
             </div>
-            <div className="flex items-center gap-2">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder={activeTask ? 'Спросите о деталях, дедлайне...' : 'Сначала выберите задачу'}
-                    className="flex-grow bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    disabled={isLoading || !activeTask}
-                />
-                <button
-                    onClick={handleSend}
-                    disabled={isLoading || !activeTask}
-                    className="bg-brand-primary text-white p-3 rounded-lg flex items-center justify-center hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <SendIcon className="w-6 h-6" />
-                </button>
+
+            {/* Input Area */}
+            <div className="p-3 bg-brand-surface border-t border-brand-gray-700">
+                <div className="relative flex items-center gap-2">
+                    {/* Input: Explicit colors to prevent white-on-white bug */}
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyPress={e => e.key === 'Enter' && handleSend()}
+                        disabled={!activeTask || isLoading}
+                        placeholder={error ? "Ошибка..." : "Напишите сообщение..."}
+                        className="w-full bg-brand-background border border-brand-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm text-brand-text-primary placeholder-brand-text-secondary/70 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all disabled:opacity-50"
+                    />
+                    <button 
+                        onClick={handleSend} 
+                        disabled={!activeTask || isLoading || !input.trim()}
+                        className="absolute right-2 p-2 bg-brand-primary text-white rounded-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-0"
+                    >
+                        {isLoading ? <SyncIcon className="w-4 h-4 animate-spin" /> : <SendIcon className="w-4 h-4" />}
+                    </button>
+                </div>
             </div>
         </div>
     );

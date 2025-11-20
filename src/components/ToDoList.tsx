@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, Dispatch, SetStateAction, useRef, useEffect } from 'react';
 import { ToDoItem, Priority, ActiveTab, TimeFormat } from '../types';
 import { PlusIcon, ClockIcon, MessageIcon, FlagIcon, SearchIcon, NoteIcon, ListCheckIcon, CancelIcon } from './IconComponents';
@@ -28,7 +27,6 @@ const formatTimeRemaining = (deadline: string) => {
     return { text: "", color: "" };
 };
 
-// Helper for safe regex escaping
 function escapeRegExp(string: string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -72,18 +70,15 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
     
     const listEndRef = useRef<HTMLDivElement>(null);
 
-    // Handle auto-scroll
     useEffect(() => {
         if (scrollToTaskId !== null && scrollToTaskId !== undefined) {
             const task = todos.find(t => t.id === scrollToTaskId);
             if (task) {
-                // Reset search and category to ensure task is visible
                 setSearchQuery('');
                 if (activeCategory !== 'Все' && task.category !== activeCategory) {
                     setActiveCategory('Все');
                 }
 
-                // Determine section to expand
                 const now = new Date();
                 const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const tomorrowStart = new Date(todayStart);
@@ -100,30 +95,25 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                     else sectionToExpand = 'future';
                 }
 
-                // Expand section
                 setCollapsedSections(prev => ({ ...prev, [sectionToExpand]: false }));
-
-                // Highlight and Scroll
                 setHighlightedTaskId(scrollToTaskId);
+                
                 setTimeout(() => {
                     const el = document.getElementById(`task-${scrollToTaskId}`);
                     if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                    // Remove highlight after animation
                     setTimeout(() => setHighlightedTaskId(null), 2000);
-                }, 300); // Wait for section expansion render
+                }, 300); 
             }
         }
     }, [scrollToTaskId, todos, activeCategory]);
 
     const updateTodo = async (id: number, updates: Partial<Omit<ToDoItem, 'id'>>) => {
-        // Optimistic update
         const updatedTodo = { ...todos.find(t => t.id === id)!, ...updates, lastModified: new Date().toISOString() };
         setTodos(todos.map(t => t.id === id ? updatedTodo : t));
         
         if (!isGuest) {
-            // API Call
             try {
                 await api.updateTodo(id, updates);
             } catch (e) {
@@ -133,7 +123,7 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
     };
 
     const handleSaveNewTodo = async (taskData: Omit<ToDoItem, 'id' | 'lastModified' | 'completed' | 'subtasks' | 'notes' | 'attachments'>) => {
-        const tempId = Date.now(); // Temporary ID for optimistic UI
+        const tempId = Date.now(); 
         const newTodo: ToDoItem = {
             id: tempId,
             ...taskData,
@@ -146,21 +136,15 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
             repeat: taskData.repeat || 'Никогда',
         };
         
-        // Optimistic update: Show it immediately
         setTodos(prevTodos => [...prevTodos, newTodo]);
         setActiveCategory('Все');
         setSearchQuery('');
         
         if (!isGuest) {
-            // API Call
             try {
-                // Send to backend
                 const response = await api.addTodo(newTodo);
-                // Strict type casting to ensure we have the correct object
                 const savedTodo = response as ToDoItem;
-                
                 if (savedTodo && savedTodo.id) {
-                    // Replace temp ID with real ID from backend so future updates work correctly
                     setTodos(prevTodos => prevTodos.map(t => t.id === tempId ? savedTodo : t));
                 }
             } catch (e) {
@@ -208,7 +192,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const tomorrowStart = new Date(todayStart);
         tomorrowStart.setDate(todayStart.getDate() + 1);
-
         const searchLower = searchQuery.toLowerCase();
         
         const filtered = todos.filter(todo => {
@@ -219,7 +202,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 const inCategory = todo.category.toLowerCase().includes(searchLower);
                 const inNotes = todo.notes?.toLowerCase().includes(searchLower) ?? false;
                 const inSubtasks = todo.subtasks?.some(sub => sub.text.toLowerCase().includes(searchLower)) ?? false;
-                
                 if (!inText && !inCategory && !inNotes && !inSubtasks) return false;
             }
             return true;
@@ -250,14 +232,12 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
         });
 
         const sortCommon = (a: ToDoItem, b: ToDoItem) => (a.completed !== b.completed ? (a.completed ? 1 : -1) : 0);
-
         groups.past.sort((a, b) => sortCommon(a, b) || new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
         groups.today.sort((a, b) => {
              const res = sortCommon(a, b);
              if (res !== 0) return res;
              const pWeight = { [Priority.HIGH]: 3, [Priority.MEDIUM]: 2, [Priority.LOW]: 1, [Priority.NONE]: 0 };
              if (a.priority !== b.priority) return pWeight[b.priority] - pWeight[a.priority];
-             
              const aTime = a.deadline ? new Date(a.deadline).getTime() : 0;
              const bTime = b.deadline ? new Date(b.deadline).getTime() : 0;
              if (aTime === 0 && bTime === 0) return 0;
@@ -439,10 +419,20 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 <div ref={listEndRef} />
             </div>
 
-            {/* Floating Add Button */}
-            <button onClick={() => setAddTaskModalOpen(true)} className="btn-loud-chicken fixed bottom-[25px] lg:bottom-8 right-4 w-14 h-14 rounded-2xl shadow-2xl z-[55] flex items-center justify-center" title="Add New Task"><PlusIcon className="w-8 h-8" /></button>
+            {/* Floating Add Button - Blue Glow */}
+            <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-[55] group">
+                <div className="btn-glow-container"></div>
+                <button 
+                    onClick={() => setAddTaskModalOpen(true)} 
+                    className="btn-floating-action w-14 h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center relative" 
+                    title="Add New Task"
+                >
+                    <PlusIcon className="w-7 h-7 lg:w-8 lg:h-8 transition-transform duration-300 group-hover:rotate-90" />
+                </button>
+            </div>
 
             {/* Modals */}
+            {/* NOTE: Removed "Find in list" onLocate passed to Modal from this view, as user is already in list */}
             <AddTaskModal isOpen={isAddTaskModalOpen} onClose={() => setAddTaskModalOpen(false)} onSave={handleSaveNewTodo} categories={categories} initialCategory={activeCategory} timeFormat={timeFormat} />
             <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTodo} onDelete={(id) => handleDeleteTodo(id)} timeFormat={timeFormat} />
         </div>

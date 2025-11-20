@@ -1,10 +1,9 @@
-
 import React, { useMemo, useState, Dispatch, SetStateAction } from 'react';
 import { ToDoItem, TimeFormat } from '../types';
 import DoughnutChart from './DoughnutChart';
 import DailyActivityChart from './DailyActivityChart';
 import TaskDetailModal from './TaskDetailModal';
-import { ChartBarIcon, ClockIcon, ChevronRightIcon, UserCircleIcon } from './IconComponents';
+import { ChartBarIcon, ClockIcon, ChevronRightIcon, UserCircleIcon, SearchIcon } from './IconComponents';
 import { api } from '../services/api';
 
 interface MeProps {
@@ -24,167 +23,103 @@ const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, user
         const completed = todos.filter(t => t.completed);
         const uncompleted = todos.filter(t => !t.completed);
         const categoryColors = ['#38bdf8', '#818cf8', '#c084fc', '#f472b6', '#fb7185', '#2dd4bf', '#fbbf24'];
-
-        const getCategoryData = (taskList: ToDoItem[]) => {
-            const categoryMap = new Map<string, number>();
-            taskList.forEach(task => categoryMap.set(task.category, (categoryMap.get(task.category) || 0) + 1));
-            return Array.from(categoryMap.entries())
-                .sort((a, b) => b[1] - a[1])
-                .map(([label, value], index) => ({ label, value, color: categoryColors[index % categoryColors.length] }));
-        };
-
-        return {
-            completedByCategory: getCategoryData(completed),
-            uncompletedByCategory: getCategoryData(uncompleted),
-            totalCompleted: completed.length,
-            totalUncompleted: uncompleted.length
-        };
-    }, [todos]);
-
-    const upcomingTasks = useMemo(() => {
-        const now = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(now.getDate() + 7);
-        return todos.filter(t => {
-            if (t.completed || !t.deadline) return false;
-            const d = new Date(t.deadline);
-            return d >= now && d <= nextWeek;
-        }).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
-    }, [todos]);
-
-    const updateTodo = async (id: number, updates: Partial<ToDoItem>) => {
-        // Optimistic Update
-        setTodos(prev => prev.map(t => {
-            if (t.id === id) {
-                return { ...t, ...updates, lastModified: new Date().toISOString() };
-            }
-            return t;
-        }));
-        setSelectedTask(prev => prev && prev.id === id ? { ...prev, ...updates } as ToDoItem : prev);
-
-        if (!isGuest) {
-            try {
-                await api.updateTodo(id, updates);
-            } catch (e) {
-                console.error("Failed to update via API");
-            }
-        }
-    };
-
-    const deleteTodo = async (id: number) => {
-        setTodos(prev => prev.filter(t => t.id !== id));
-        setSelectedTask(null);
         
-        if (!isGuest) {
-            try {
-                await api.deleteTodo(id);
-            } catch (e) {
-                 console.error("Failed to delete via API");
-            }
-        }
-    };
+        const getCatData = (list: ToDoItem[]) => {
+            const map = new Map<string, number>();
+            list.forEach(t => map.set(t.category, (map.get(t.category) || 0) + 1));
+            return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).map(([l, v], i) => ({ label: l, value: v, color: categoryColors[i % categoryColors.length] }));
+        };
+        return { comp: getCatData(completed), uncomp: getCatData(uncompleted), totalC: completed.length, totalU: uncompleted.length };
+    }, [todos]);
 
-    const renderLegend = (data: { label: string, value: number, color: string }[]) => (
-        <ul className="space-y-1.5 max-h-32 overflow-y-auto pr-1 no-scrollbar">
-            {data.map(item => (
-                <li key={item.label} className="flex items-center justify-between text-xs text-shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: item.color }}></span>
-                        <span className="text-brand-text-secondary truncate max-w-[80px]">{item.label}</span>
-                    </div>
-                    <span className="font-bold text-brand-text-primary">{item.value}</span>
-                </li>
-            ))}
-        </ul>
-    );
-
-    const cardClass = "bg-brand-surface-solid/80 backdrop-blur-md border border-brand-gray-700/30 p-5 rounded-2xl shadow-lg";
+    const upcoming = useMemo(() => {
+        const now = new Date();
+        const week = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        return todos.filter(t => !t.completed && t.deadline && new Date(t.deadline) >= now && new Date(t.deadline) <= week).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
+    }, [todos]);
 
     return (
-        <div className="animate-fade-in pb-20 max-w-5xl mx-auto text-brand-text-primary">
+        <div className="animate-fade-in pb-20 max-w-6xl mx-auto text-brand-text-primary space-y-6">
             
-            {/* Profile Section */}
-            <div className={`${cardClass} mb-6 flex flex-col sm:flex-row items-center justify-between gap-4`}>
-                <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-brand-primary to-brand-accent flex items-center justify-center shadow-lg">
-                         <UserCircleIcon className="w-10 h-10 text-white" />
+            <div className="glass-panel p-8 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-primary to-brand-accent p-0.5 shadow-glow">
+                        <div className="w-full h-full bg-brand-background rounded-full flex items-center justify-center">
+                             <UserCircleIcon className="w-12 h-12 text-brand-text-primary" />
+                        </div>
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold">{isGuest ? "Гостевой режим" : (username || "User")}</h2>
-                        <p className="text-sm text-brand-text-secondary">{isGuest ? "Локальное хранилище" : "Профиль"}</p>
+                        <h2 className="text-3xl font-bold tracking-tight">{isGuest ? "Гостевой режим" : (username || "Пользователь")}</h2>
+                        <p className="text-brand-text-secondary font-medium mt-1">{isGuest ? "Данные хранятся локально" : "Синхронизация активна"}</p>
                     </div>
                 </div>
-                {onLogout && (
-                    <button 
-                        onClick={onLogout}
-                        className="px-5 py-2 rounded-xl bg-brand-surface hover:bg-red-500/10 text-brand-text-secondary hover:text-red-500 border border-brand-gray-700 transition-colors font-medium text-sm"
-                    >
-                        Выйти
-                    </button>
-                )}
+                {onLogout && <button onClick={onLogout} className="px-6 py-2.5 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors font-bold">Выйти</button>}
             </div>
 
-            <h2 className="text-2xl font-bold text-shadow-sm mb-6 flex items-center gap-2">
-                <ChartBarIcon className="w-7 h-7 text-brand-accent" /> Дашборд
-            </h2>
-
-            <div className={`${cardClass} mb-6`}>
+            <div className="glass-panel p-6 rounded-3xl">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-brand-primary/20 rounded-lg"><ChartBarIcon className="w-6 h-6 text-brand-primary" /></div>
+                    <h3 className="text-xl font-bold">Активность</h3>
+                </div>
                 <DailyActivityChart todos={todos} />
             </div>
 
-            <div className={`${cardClass} mb-6`}>
-                <h3 className="text-lg font-bold mb-4 text-shadow-sm flex items-center gap-2">
-                    <ClockIcon className="w-5 h-5 text-brand-accent" /> Предстоящие (7 дней)
-                </h3>
-                {upcomingTasks.length > 0 ? (
-                    <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {upcomingTasks.map(task => (
-                            <li key={task.id} onClick={() => setSelectedTask(task)} className="flex items-center justify-between bg-brand-surface p-3 rounded-xl border border-brand-gray-700/20 hover:bg-brand-surface-solid/50 transition-all cursor-pointer group">
-                                <div className="flex flex-col overflow-hidden">
-                                    <span className="font-medium text-brand-text-primary text-shadow-sm truncate group-hover:text-brand-primary transition-colors">{task.text}</span>
-                                    <div className="flex items-center gap-3 text-xs text-brand-text-secondary mt-1">
-                                        <span className="flex items-center gap-1 text-brand-secondary"><ClockIcon className="w-3 h-3" />{new Date(task.deadline!).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' })}</span>
-                                        <span className="bg-brand-surface-solid/30 px-1.5 py-0.5 rounded text-[10px]">{task.category}</span>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 glass-panel p-6 rounded-3xl flex flex-col">
+                    <div className="flex items-center gap-3 mb-6">
+                         <div className="p-2 bg-brand-accent/20 rounded-lg"><ClockIcon className="w-6 h-6 text-brand-accent" /></div>
+                         <h3 className="text-xl font-bold">Ближайшие дедлайны</h3>
+                    </div>
+                    <div className="space-y-3 flex-grow">
+                        {upcoming.length > 0 ? upcoming.map(task => (
+                            <div key={task.id} onClick={() => setSelectedTask(task)} className="flex items-center justify-between p-4 rounded-2xl bg-brand-background/40 hover:bg-brand-background/80 border border-transparent hover:border-brand-gray-700 transition-all cursor-pointer group">
+                                <div>
+                                    <span className="font-bold text-brand-text-primary block mb-1">{task.text}</span>
+                                    <div className="flex gap-2 text-xs">
+                                        <span className="text-brand-accent font-mono">{new Date(task.deadline!).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' })}</span>
+                                        <span className="text-brand-text-secondary">&bull; {task.category}</span>
                                     </div>
                                 </div>
-                                <ChevronRightIcon className="w-5 h-5 text-brand-text-secondary group-hover:text-brand-text-primary transition-colors" />
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <div className="text-center text-brand-text-secondary py-8 bg-brand-surface rounded-xl border border-brand-gray-700/20 border-dashed">Нет предстоящих дедлайнов. Вы свободны!</div>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-brand-surface-solid/80 backdrop-blur-md border border-brand-gray-700/30 p-5 rounded-2xl shadow-lg">
-                    <h3 className="text-md font-bold mb-4 text-center text-shadow-sm text-red-400 uppercase tracking-wide text-xs">Ожидающие</h3>
-                    {stats.totalUncompleted > 0 ? (
-                        <div className="flex items-center gap-4">
-                            <div className="w-32 h-32 flex-shrink-0 relative"><DoughnutChart data={stats.uncompletedByCategory} /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xl font-bold">{stats.totalUncompleted}</span></div></div>
-                            <div className="flex-grow">{renderLegend(stats.uncompletedByCategory)}</div>
-                        </div>
-                    ) : <p className="text-center text-brand-text-secondary py-10">Нет ожидающих задач.</p>}
+                                <div className="flex items-center gap-2">
+                                    {/* Direct Find-in-List Button */}
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); onLocateTask(task.id); }}
+                                        className="p-2 text-brand-text-secondary hover:text-brand-primary hover:bg-brand-surface rounded-full transition-colors"
+                                        title="Find in list"
+                                    >
+                                        <SearchIcon className="w-5 h-5" />
+                                    </button>
+                                    <ChevronRightIcon className="w-5 h-5 text-brand-text-secondary group-hover:text-brand-primary" />
+                                </div>
+                            </div>
+                        )) : <div className="h-32 flex items-center justify-center text-brand-text-secondary">Нет задач на неделю 🎉</div>}
+                    </div>
                 </div>
 
-                <div className="bg-brand-surface-solid/80 backdrop-blur-md border border-brand-gray-700/30 p-5 rounded-2xl shadow-lg">
-                    <h3 className="text-md font-bold mb-4 text-center text-shadow-sm text-green-400 uppercase tracking-wide text-xs">Выполненные</h3>
-                    {stats.totalCompleted > 0 ? (
-                        <div className="flex items-center gap-4">
-                            <div className="w-32 h-32 flex-shrink-0 relative"><DoughnutChart data={stats.completedByCategory} /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><span className="text-xl font-bold">{stats.totalCompleted}</span></div></div>
-                            <div className="flex-grow">{renderLegend(stats.completedByCategory)}</div>
+                <div className="glass-panel p-6 rounded-3xl flex flex-col">
+                     <h3 className="text-xl font-bold mb-6 text-center">Статистика</h3>
+                     <div className="flex-grow flex flex-col items-center justify-center gap-4">
+                        <div className="relative w-48 h-48">
+                            <DoughnutChart data={stats.comp} />
                         </div>
-                     ) : <p className="text-center text-brand-text-secondary py-10">Нет выполненных задач.</p>}
+                        <span className="text-sm font-bold uppercase tracking-wider text-brand-text-secondary bg-brand-surface px-3 py-1 rounded-full">Готово</span>
+                        <div className="w-full mt-4 space-y-2 border-t border-brand-gray-700/50 pt-4">
+                             <div className="flex justify-between text-sm p-3 bg-brand-background/30 rounded-xl items-center">
+                                 <span className="text-brand-text-secondary">Ожидает</span>
+                                 <span className="font-bold text-brand-text-primary text-lg">{stats.totalU}</span>
+                             </div>
+                        </div>
+                     </div>
                 </div>
             </div>
 
             <TaskDetailModal 
                 task={selectedTask} 
                 onClose={() => setSelectedTask(null)} 
-                onUpdate={updateTodo} 
-                onDelete={deleteTodo} 
-                onLocate={onLocateTask}
-                timeFormat={timeFormat}
+                onUpdate={(id, u) => { setTodos(p => p.map(t => t.id === id ? { ...t, ...u } : t)); if (!isGuest) api.updateTodo(id, u); }} 
+                onDelete={(id) => { setTodos(p => p.filter(t => t.id !== id)); setSelectedTask(null); if (!isGuest) api.deleteTodo(id); }} 
+                onLocate={onLocateTask} 
+                timeFormat={timeFormat} 
             />
         </div>
     );

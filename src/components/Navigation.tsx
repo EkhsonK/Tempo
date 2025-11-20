@@ -14,8 +14,8 @@ const NavItem: React.FC<{
     onClick: () => void;
     title: string;
 }> = ({ id, icon, isActive, onClick, title }) => {
-    const activeClasses = 'bg-brand-primary text-white shadow-glow-primary scale-110';
-    const inactiveClasses = 'text-brand-text-secondary hover:bg-brand-surface-solid hover:text-brand-primary hover:scale-105';
+    const activeClasses = 'bg-brand-primary text-white shadow-glow scale-110';
+    const inactiveClasses = 'text-brand-text-secondary hover:bg-brand-surface hover:text-brand-primary hover:scale-105';
     
     return (
         <button
@@ -75,10 +75,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                         />
                     ))}
                 </div>
-
-                <div className="mt-auto mb-4 opacity-50 text-[10px] font-mono text-center text-gray-500">
-                    v2.9
-                </div>
+                
+                {/* Version removed from bottom as requested */}
             </nav>
         </>
     );

@@ -8,264 +8,161 @@
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+      :root { --transition-speed: 0.5s; }
+      
+      /* --- 1. LIGHT (Classic Blue/White) --- */
       :root {
-        /* Light Theme (Improved Contrast) */
-        --brand-primary: #2563EB; /* Darker Blue */
+        --brand-primary: #2563EB; 
         --brand-secondary: #3B82F6;
-        --brand-background: #F3F4F6; /* Light Gray Background */
-        --brand-surface-rgb: 255, 255, 255; /* Pure White Surface */
-        --brand-text-primary: #111827; /* Near Black */
-        --brand-text-secondary: #4B5563; /* Dark Gray */
-        --brand-accent: #0891B2;
-        --brand-accent-rgb: 8, 145, 178;
-        --brand-gray-900: #F9FAFB;
-        --brand-gray-800: #E5E7EB; /* Borders */
-        --brand-gray-700: #D1D5DB;
-        --brand-gray-600: #9CA3AF;
+        --brand-background: #FFFFFF; 
+        --brand-surface-rgb: 255, 255, 255;
+        --brand-text-primary: #0F172A;
+        --brand-text-secondary: #64748B;
+        --brand-accent: #06B6D4;
+        --brand-accent-rgb: 6, 182, 212;
+        --brand-gray-800: #E2E8F0;
+        --brand-gray-700: #CBD5E1;
+        --glass-opacity: 0.95; 
+        --bg-gradient: #FFFFFF;
+        --shadow-color: 0, 0, 0;
       }
+
+      /* --- 2. [NEW] NEON (Cyberpunk Green) --- */
+      /* Replaces Mint */
+      html.neon {
+        --brand-primary: #ccff00; /* Neon Lime */
+        --brand-secondary: #39ff14; /* Electric Green */
+        --brand-background: #000000; /* Pure Black */
+        --brand-surface-rgb: 10, 10, 10; /* Almost Black */
+        --brand-text-primary: #ccff00; /* Matrix Text */
+        --brand-text-secondary: #a3cf00;
+        --brand-accent: #ffffff; /* White Accents */
+        --brand-accent-rgb: 255, 255, 255;
+        --brand-gray-800: #1a1a1a;
+        --brand-gray-700: #333333;
+        --glass-opacity: 0.8;
+        --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
+        --shadow-color: 204, 255, 0; /* Green Glow */
+      }
+
+      /* --- 3. [NEW] PORCELAIN (Ultra White/Mono) --- */
+      /* Requested "White Color System" */
+      html.porcelain {
+        --brand-primary: #171717; /* Neutral Black */
+        --brand-secondary: #404040; /* Neutral Gray */
+        --brand-background: #fafafa; /* Off-White */
+        --brand-surface-rgb: 255, 255, 255;
+        --brand-text-primary: #000000;
+        --brand-text-secondary: #525252;
+        --brand-accent: #737373;
+        --brand-accent-rgb: 115, 115, 115;
+        --brand-gray-800: #e5e5e5;
+        --brand-gray-700: #d4d4d4;
+        --glass-opacity: 0.9;
+        --bg-gradient: #fafafa;
+        --shadow-color: 0, 0, 0;
+      }
+
+      /* --- 4. DARK (Deep Slate) --- */
       html.dark {
-        /* Dark Theme (Total Black) */
-        --brand-primary: #1976D2;
-        --brand-secondary: #64B5F6;
-        --brand-background: #0D1117;
-        --brand-surface-rgb: 22, 27, 34; /* For RGBA - #161B22 */
-        --brand-text-primary: #E0E0E0;
-        --brand-text-secondary: #B0B0B0;
-        --brand-accent: #89DDF3;
-        --brand-accent-rgb: 137, 221, 243;
-        --brand-gray-900: #121212;
-        --brand-gray-800: #2C2C2C;
-        --brand-gray-700: #3C3C3C;
-        --brand-gray-600: #5C5C5C;
-      }
-      html.midnight {
-        /* Midnight Blue Theme */
-        --brand-primary: #38bdf8; /* Sky Blue */
-        --brand-secondary: #6366f1;
-        --brand-background: #0f172a;
-        --brand-surface-rgb: 30, 41, 59; /* For RGBA - #1e293b */
-        --brand-text-primary: #f1f5f9;
-        --brand-text-secondary: #94a3b8;
-        --brand-accent: #c084fc; /* Purple - Distinct from Primary */
-        --brand-accent-rgb: 192, 132, 252;
-        --brand-gray-900: #020617;
-        --brand-gray-800: #1e293b;
+        --brand-primary: #3B82F6;
+        --brand-secondary: #60A5FA;
+        --brand-background: #020617;
+        --brand-surface-rgb: 15, 23, 42;
+        --brand-text-primary: #F8FAFC;
+        --brand-text-secondary: #94A3B8;
+        --brand-accent: #38BDF8;
+        --brand-accent-rgb: 56, 189, 248;
+        --brand-gray-800: #1E293B;
         --brand-gray-700: #334155;
-        --brand-gray-600: #475569;
+        --glass-opacity: 0.6;
+        --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
       }
-       html.forest {
-        /* New Forest Theme */
-        --brand-primary: #22c55e; /* Green */
-        --brand-secondary: #84cc16;
-        --brand-background: #1c1917;
-        --brand-surface-rgb: 41, 37, 36; /* For RGBA - #292524 */
-        --brand-text-primary: #f5f5f4;
-        --brand-text-secondary: #a8a29e;
-        --brand-accent: #facc15; /* Yellow/Gold - Distinct from Primary */
-        --brand-accent-rgb: 250, 204, 21;
-        --brand-gray-900: #0c0a09;
-        --brand-gray-800: #292524;
-        --brand-gray-700: #44403c;
-        --brand-gray-600: #57534e;
+
+      /* --- 5. MIDNIGHT (Indigo) --- */
+      html.midnight {
+        --brand-primary: #8B5CF6;
+        --brand-secondary: #A78BFA;
+        --brand-surface-rgb: 30, 27, 75; 
+        --brand-text-primary: #E0E7FF;
+        --brand-text-secondary: #A5B4FC;
+        --brand-accent: #F472B6;
+        --brand-accent-rgb: 244, 114, 182;
+        --brand-gray-800: #312E81;
+        --brand-gray-700: #4338CA;
+        --glass-opacity: 0.5;
+        --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
       }
+
+       /* --- 6. SUNSET (Golden Hour) --- */
+       html.sunset {
+        --brand-primary: #F43F5E; 
+        --brand-secondary: #FB923C;
+        --brand-surface-rgb: 60, 20, 40;
+        --brand-text-primary: #FFF1F2;
+        --brand-text-secondary: #FDA4AF;
+        --brand-accent: #FBBF24;
+        --brand-accent-rgb: 251, 191, 36;
+        --brand-gray-800: #881337;
+        --brand-gray-700: #9F1239;
+        --glass-opacity: 0.6;
+        --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
+      }
+
+      /* --- 7. LIQUID GLASS --- */
+      html.liquid {
+        --brand-primary: #22d3ee;
+        --brand-secondary: #818cf8;
+        --brand-surface-rgb: 255, 255, 255;
+        --brand-text-primary: #ffffff;
+        --brand-text-secondary: #cbd5e1;
+        --brand-accent: #c084fc;
+        --brand-accent-rgb: 192, 132, 252;
+        --brand-gray-800: rgba(255,255,255,0.1);
+        --brand-gray-700: rgba(255,255,255,0.2);
+        --glass-opacity: 0.1;
+        --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                       radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                       radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%),
+                       linear-gradient(to bottom, #171717, #000000);
+      }
+
       body {
-        background-color: var(--brand-background);
-        transition: background-color 0.3s ease;
-      }
-      
-      /* Text Shadow for readability on images */
-      .text-shadow-sm {
-        text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-      }
-      
-      /* Explicit Keyframes for Custom CSS Classes */
-      @keyframes slideUpFadeIn {
-        0% { opacity: 0; transform: translateY(20px); }
-        100% { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes slideDownFadeOut {
-        0% { opacity: 1; transform: translateY(0); height: auto; margin-bottom: 0.5rem; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-        100% { opacity: 0; transform: translateY(10px); height: 0px; margin: 0; padding: 0; overflow: hidden; }
-      }
-      @keyframes slideInRight {
-        from { opacity: 0; transform: translateX(-10px); }
-        to { opacity: 1; transform: translateX(0); }
+        background: var(--custom-bg, var(--bg-gradient));
+        background-attachment: fixed;
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: center;
+        color: var(--brand-text-primary);
+        min-height: 100vh;
+        transition: background 0.5s ease, color 0.3s ease;
       }
 
-      .task-item {
-        opacity: 0;
-        transform: translateY(20px);
-        animation: slideUpFadeIn 0.4s ease-out forwards;
-      }
-      .task-item-exit {
-        animation: slideDownFadeOut 0.3s ease-in forwards;
-      }
-      
-      .list-item-enter {
-        animation: slideInRight 0.3s ease-out forwards;
-      }
-      .list-item-exit {
-        animation: slideDownFadeOut 0.3s ease-in forwards;
+      .glass-panel {
+        background: rgba(var(--brand-surface-rgb), var(--glass-opacity));
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(var(--brand-gray-700), 0.3);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
       }
 
-      /* Utilities */
-      .no-scrollbar::-webkit-scrollbar {
-          display: none;
-      }
-      .no-scrollbar {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-      }
-
-      /* UIverse: Loud Chicken 53 (Button) */
-      .btn-loud-chicken {
-        background: linear-gradient(to bottom right, var(--brand-primary), var(--brand-secondary));
-        border: 0;
-        border-radius: 12px;
-        color: #FFFFFF;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-family: -apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-        font-size: 16px;
-        font-weight: 500;
-        line-height: 2.5;
-        outline: transparent;
-        text-align: center;
-        text-decoration: none;
-        transition: box-shadow .2s,-webkit-transform .1s,transform .1s;
-        user-select: none;
-        -webkit-user-select: none;
-        touch-action: manipulation;
-        white-space: nowrap;
-        box-shadow: 0 0 0 3px rgba(var(--brand-surface-rgb), 0.1), 0 4px 15px rgba(0,0,0,0.3);
-      }
-
-      .btn-loud-chicken:not(:disabled):hover {
-        box-shadow: 0 0 0 2px rgba(var(--brand-surface-rgb), 0.1), 0 6px 20px rgba(0,0,0,0.4);
-        transform: translateY(-1px);
-      }
-
-      .btn-loud-chicken:not(:disabled):active {
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-        transform: translateY(2px);
-      }
+      .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
       
-      .btn-loud-chicken:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        background: var(--brand-gray-600);
-      }
+      .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--brand-gray-700); border-radius: 10px; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
 
-      /* UIverse: Fast Octopus 78 (Developer Card) */
-      .card-fast-octopus {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 16px;
-        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        backdrop-filter: blur(5px);
-        -webkit-backdrop-filter: blur(5px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-      
-      .card-fast-octopus:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 30px rgba(var(--brand-accent-rgb), 0.2);
-        border: 1px solid var(--brand-accent);
-      }
-
-      /* UIverse: Plastic Moth 91 (Radio/Priority Picker) */
-      .radio-plastic-moth-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-      
-      .radio-plastic-moth-input {
-        display: none;
-      }
-      
-      .radio-plastic-moth-label {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px 20px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--brand-text-secondary);
-        background-color: rgba(var(--brand-surface-rgb), 0.1);
-        border: 2px solid transparent;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-      }
-      
-      .radio-plastic-moth-input:checked + .radio-plastic-moth-label {
-        background-color: rgba(var(--brand-surface-rgb), 0.2);
+      .btn-floating-action {
+        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
         color: white;
-        border-color: var(--brand-primary);
-        box-shadow: 0 0 10px rgba(var(--brand-accent-rgb), 0.3);
+        box-shadow: 0 8px 20px -5px rgba(var(--brand-accent-rgb), 0.5);
+        border: 1px solid rgba(255,255,255,0.3);
+        transition: transform 0.2s, box-shadow 0.2s;
       }
-      
-      /* Specific Colors for Priorities */
-      .radio-plastic-moth-input[value="high"]:checked + .radio-plastic-moth-label {
-        border-color: #ef4444;
-        color: #ef4444;
-      }
-      .radio-plastic-moth-input[value="medium"]:checked + .radio-plastic-moth-label {
-        border-color: #f97316;
-        color: #f97316;
-      }
-      .radio-plastic-moth-input[value="low"]:checked + .radio-plastic-moth-label {
-        border-color: #3b82f6;
-        color: #3b82f6;
-      }
-      
-      /* UIverse: Heavy Dog 14 (Theme Switcher Button) adapted */
-      .theme-btn {
-        position: relative;
-        padding: 12px 24px;
-        background: transparent;
-        border: 2px solid var(--brand-gray-700);
-        border-radius: 12px;
-        color: var(--brand-text-secondary);
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
-        overflow: hidden;
-      }
-      
-      .theme-btn::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        margin: auto;
-        width: 50px;
-        height: 50px;
-        border-radius: 50px;
-        scale: 0;
-        z-index: -1;
-        background-color: var(--brand-primary);
-        transition: all 0.6s cubic-bezier(0.23, 1, 0.320, 1);
-      }
-      
-      .theme-btn:hover::before {
-        scale: 3;
-      }
-      
-      .theme-btn:hover {
-        color: white;
-        border-color: var(--brand-primary);
-      }
-      
-      .theme-btn.active {
-        background-color: var(--brand-primary);
-        border-color: var(--brand-primary);
-        color: white;
-        box-shadow: 0 0 20px rgba(var(--brand-accent-rgb), 0.4);
-      }
-      
+      .btn-floating-action:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 12px 30px -5px rgba(var(--brand-accent-rgb), 0.7); }
+      .btn-floating-action:active { transform: scale(0.95); }
     </style>
     <script>
       tailwind.config = {
@@ -275,42 +172,15 @@
             colors: {
               'brand-primary': 'var(--brand-primary)',
               'brand-secondary': 'var(--brand-secondary)',
-              'brand-background': 'var(--brand-background)',
-              'brand-surface': 'rgba(var(--brand-surface-rgb), 0.2)', /* Increased Transparency */
+              'brand-background': 'transparent', 
+              'brand-surface': 'rgba(var(--brand-surface-rgb), var(--glass-opacity))',
               'brand-text-primary': 'var(--brand-text-primary)',
               'brand-text-secondary': 'var(--brand-text-secondary)',
               'brand-accent': 'var(--brand-accent)',
-              'gray-900': 'var(--brand-gray-900)',
-              'brand-surface-solid': 'rgb(var(--brand-surface-rgb))',
               'brand-gray-800': 'var(--brand-gray-800)',
               'brand-gray-700': 'var(--brand-gray-700)',
-              'brand-gray-600': 'var(--brand-gray-600)',
             },
-            boxShadow: {
-              'glow-primary': '0 0 15px 0 rgba(var(--brand-accent-rgb), 0.45)',
-            },
-            animation: {
-                'fade-in': 'fadeIn 0.3s ease-in-out',
-                'scale-in': 'scaleIn 0.2s ease-out',
-            },
-            keyframes: {
-                fadeIn: {
-                    '0%': { opacity: 0 },
-                    '100%': { opacity: 1 },
-                },
-                scaleIn: {
-                    '0%': { opacity: 0, transform: 'scale(0.95)' },
-                    '100%': { opacity: 1, transform: 'scale(1)' },
-                },
-                slideUpFadeIn: {
-                  '0%': { opacity: 0, transform: 'translateY(20px)' },
-                  '100%': { opacity: 1, transform: 'translateY(0)' },
-                },
-                slideDownFadeOut: {
-                  '0%': { opacity: 1, transform: 'translateY(0)', height: 'auto', margin: '0.75rem 0', padding: '0.75rem' },
-                  '100%': { opacity: 0, transform: 'translateY(20px)', height: '0px', margin: '0', padding: '0' },
-                }
-            },
+            boxShadow: { 'glow': '0 0 20px -5px rgba(var(--brand-accent-rgb), 0.4)', }
           },
         },
       }
@@ -329,9 +199,8 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-  <body class="bg-brand-background text-brand-text-primary transition-colors duration-300">
+  <body class="transition-colors duration-300">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
