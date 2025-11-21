@@ -1,5 +1,3 @@
-
-
 export interface SubTask {
   id: number;
   text: string;
@@ -71,7 +69,7 @@ export interface GroundingChunk {
     };
 }
 
-export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
+// Removed: export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
 
 export interface ActivityLogEntry {
     id: number;

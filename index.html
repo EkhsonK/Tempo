@@ -17,7 +17,7 @@
                 primary: 'var(--brand-primary)',
                 secondary: 'var(--brand-secondary)',
                 background: 'var(--brand-background)',
-                surface: 'rgb(var(--brand-surface-rgb))', // Using RGB var for opacity support
+                surface: 'rgb(var(--brand-surface-rgb))', 
                 'surface-solid': 'var(--brand-surface-solid)',
                 'text-primary': 'var(--brand-text-primary)',
                 'text-secondary': 'var(--brand-text-secondary)',
@@ -38,27 +38,26 @@
     <style>
       :root { --transition-speed: 0.4s; }
       
-      /* --- 1. PRO LIGHT (Redesigned: Zero Glow, High Contrast) --- */
+      /* --- 1. PRO LIGHT (Default OPAQUE) --- */
       :root {
-        --brand-primary: #4F46E5; /* Indigo 600 */
-        --brand-secondary: #818CF8; /* Indigo 400 */
-        --brand-background: #F8FAFC; /* Slate 50 */
+        --brand-primary: #4F46E5;
+        --brand-secondary: #818CF8;
+        --brand-background: #F8FAFC;
         --brand-surface-rgb: 255, 255, 255;
         --brand-surface-solid: #FFFFFF;
-        --brand-text-primary: #0F172A; /* Slate 900 */
-        --brand-text-secondary: #64748B; /* Slate 500 */
-        --brand-accent: #0EA5E9; /* Sky 500 */
+        --brand-text-primary: #0F172A;
+        --brand-text-secondary: #64748B;
+        --brand-accent: #0EA5E9;
         --brand-accent-rgb: 14, 165, 233;
         --brand-gray-800: #E2E8F0;
         --brand-gray-700: #CBD5E1;
-        --glass-opacity: 1;
+        --glass-opacity: 1; /* Default is OPAQUE */
         --bg-gradient: #F8FAFC; 
         --shadow-color: 148, 163, 184;
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #F1F5F9;
         --brand-chip-border: #E2E8F0;
         
-        /* FLATTENED EFFECTS */
         --shadow-glow: none; 
         --icon-filter: none;
         text-shadow: none !important;
@@ -78,7 +77,7 @@
         --brand-accent-rgb: 255, 255, 255;
         --brand-gray-800: #333333;
         --brand-gray-700: #444444;
-        --glass-opacity: 0.9;
+        --glass-opacity: 0.9; /* Retain default transparency for dark themes */
         --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
         --shadow-color: 204, 255, 0;
         --brand-text-on-primary: #000000; 
@@ -102,7 +101,7 @@
         --brand-accent-rgb: 56, 189, 248;
         --brand-gray-800: #334155;
         --brand-gray-700: #475569;
-        --glass-opacity: 0.8;
+        --glass-opacity: 0.8; /* Retain default transparency for dark themes */
         --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #1E293B;
@@ -124,7 +123,7 @@
         --brand-accent-rgb: 244, 114, 182;
         --brand-gray-800: #4338CA;
         --brand-gray-700: #6366F1;
-        --glass-opacity: 0.7;
+        --glass-opacity: 0.7; /* Retain default transparency for dark themes */
         --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #312E81;
@@ -146,7 +145,7 @@
         --brand-accent-rgb: 251, 191, 36;
         --brand-gray-800: #9F1239;
         --brand-gray-700: #BE123C;
-        --glass-opacity: 0.7;
+        --glass-opacity: 0.7; /* Retain default transparency for dark themes */
         --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #881337;
@@ -188,6 +187,11 @@
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(var(--brand-gray-700), 0.8);
         box-shadow: var(--card-shadow);
+      }
+      
+      /* Modals remain opaque */
+      .modal-surface {
+          background: rgba(var(--brand-surface-rgb), 1.0) !important;
       }
 
       .shadow-glow { box-shadow: var(--shadow-glow); }

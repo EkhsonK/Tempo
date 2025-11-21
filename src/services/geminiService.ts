@@ -1,19 +1,24 @@
 import { GoogleGenAI, Chat } from "@google/genai";
 // FIX: Add missing type imports for new service functions.
-import { ChatMessage, GroundingChunk, AspectRatio } from '../types';
+import { ChatMessage, GroundingChunk } from '../types';
 
-if (!process.env.API_KEY) {
+// [FIX] Robust API Key Access
+const apiKey = process.env.API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!apiKey) {
+    console.error("API Key is missing. Please check .env.local");
     throw new Error("API_KEY environment variable is not set.");
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey });
 
 const taskChats = new Map<number, Chat>();
 
 function getTaskChatSession(taskId: number): Chat {
     if (!taskChats.has(taskId)) {
         const chat = ai.chats.create({ 
-            model: 'gemini-2.5-flash',
+            // [CHANGE] Switched model back to 2.5
+            model: 'gemini-2.5-flash', 
             config: {
                 systemInstruction: "You are a helpful assistant. The user is asking questions about a specific task they are working on. Be concise, helpful, and focus on solving the task."
             }
@@ -33,10 +38,10 @@ export async function* streamTaskChat(taskId: number, history: ChatMessage[], ne
     }
 }
 
-// FIX: Add missing getGroundedResponse function for the Search component.
 export async function getGroundedResponse(query: string): Promise<{ text: string; sources: GroundingChunk[] }> {
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        // [CHANGE] Switched model back to 2.5
+        model: "gemini-2.5-flash", 
         contents: query,
         config: {
             tools: [{ googleSearch: {} }],
@@ -46,23 +51,4 @@ export async function getGroundedResponse(query: string): Promise<{ text: string
     const text = response.text;
     const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
     return { text, sources: sources as GroundingChunk[] };
-}
-
-// FIX: Add missing generateImage function for the ImageGenerator component.
-export async function generateImage(prompt: string, aspectRatio: AspectRatio): Promise<string | null> {
-    const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: prompt,
-        config: {
-            numberOfImages: 1,
-            outputMimeType: 'image/jpeg',
-            aspectRatio: aspectRatio,
-        },
-    });
-
-    if (response.generatedImages && response.generatedImages.length > 0) {
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
-    }
-    return null;
 }

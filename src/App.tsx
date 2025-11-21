@@ -65,10 +65,18 @@ const App: React.FC = () => {
     
     useEffect(() => { localStorage.setItem('timeFormat', timeFormat); }, [timeFormat]);
 
+    // [FIX] Dynamic Opacity Logic
     useEffect(() => {
         const root = document.documentElement;
-        if (customBackground) root.style.setProperty('--custom-bg', `${customBackground} center/cover fixed no-repeat`);
-        else root.style.removeProperty('--custom-bg');
+        if (customBackground) {
+            root.style.setProperty('--custom-bg', `${customBackground} center/cover fixed no-repeat`);
+            // Set opacity to 0.75 only when an image is present
+            root.style.setProperty('--glass-opacity', '0.75'); 
+        } else {
+            root.style.removeProperty('--custom-bg');
+            // Remove the override to revert to the theme's default (which is now 1.0 for light)
+            root.style.removeProperty('--glass-opacity'); 
+        }
     }, [customBackground]);
 
     const handleRestoreBackup = (backup: AppBackup) => { if (!backup.todos) return; setTodos(backup.todos); setCategories(backup.categories); setTheme(backup.theme); localStorage.setItem('taskChatHistories', JSON.stringify(backup.taskChatHistories)); alert("Restored."); };
