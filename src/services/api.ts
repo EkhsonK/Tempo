@@ -1,6 +1,10 @@
+/// <reference types="vite/client" />
 import { ToDoItem } from '../types';
 
-const API_URL = 'http://127.0.0.1:5000/api';
+// [UPDATED] Dynamic URL logic
+// If on Vercel (production), use the Env Variable. If local, use localhost.
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+
 const USER_ID_KEY = 'tempo_user_id';
 
 // Helper to get ID from storage directly if variable is lost
@@ -71,7 +75,7 @@ export const api = {
         body: JSON.stringify({ username, password })
     }),
 
-    // [NEW] User Settings
+    // User Settings
     getUserSettings: () => safeFetch(`${API_URL}/user`),
     
     updateUserSettings: (settings: { theme?: string, time_format?: string, background_url?: string | null }) => safeFetch(`${API_URL}/user`, {
