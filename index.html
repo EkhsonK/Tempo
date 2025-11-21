@@ -4,90 +4,156 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tempo</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233B82F6'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z' clip-rule='evenodd'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z' clip-rule='evenodd'/%3E%3C/svg%3E" />
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                primary: 'var(--brand-primary)',
+                secondary: 'var(--brand-secondary)',
+                background: 'var(--brand-background)',
+                surface: 'rgb(var(--brand-surface-rgb))', // Using RGB var for opacity support
+                'surface-solid': 'var(--brand-surface-solid)',
+                'text-primary': 'var(--brand-text-primary)',
+                'text-secondary': 'var(--brand-text-secondary)',
+                accent: 'var(--brand-accent)',
+                'gray-800': 'var(--brand-gray-800)',
+                'gray-700': 'var(--brand-gray-700)',
+                'chip-bg': 'var(--brand-chip-bg)',
+              }
+            },
+            boxShadow: {
+              glow: 'var(--shadow-glow)',
+            }
+          }
+        }
+      }
+    </script>
+
     <style>
       :root { --transition-speed: 0.4s; }
       
-      /* --- LIGHT MODE (Pure White) --- */
+      /* --- 1. PRO LIGHT (Redesigned: Zero Glow, High Contrast) --- */
       :root {
-        --brand-primary: #2563EB; 
-        --brand-secondary: #3B82F6;
-        --brand-background: #FFFFFF; 
-        --brand-surface-rgb: 245, 245, 245; /* Slightly darker surface for contrast */
-        --brand-text-primary: #0F172A;
-        --brand-text-secondary: #475569;
-        --brand-accent: #06B6D4;
-        --brand-accent-rgb: 6, 182, 212;
+        --brand-primary: #4F46E5; /* Indigo 600 */
+        --brand-secondary: #818CF8; /* Indigo 400 */
+        --brand-background: #F8FAFC; /* Slate 50 */
+        --brand-surface-rgb: 255, 255, 255;
+        --brand-surface-solid: #FFFFFF;
+        --brand-text-primary: #0F172A; /* Slate 900 */
+        --brand-text-secondary: #64748B; /* Slate 500 */
+        --brand-accent: #0EA5E9; /* Sky 500 */
+        --brand-accent-rgb: 14, 165, 233;
         --brand-gray-800: #E2E8F0;
         --brand-gray-700: #CBD5E1;
-        --glass-opacity: 0.95; 
-        --bg-gradient: #FFFFFF;
-        --shadow-color: 0, 0, 0;
+        --glass-opacity: 1;
+        --bg-gradient: #F8FAFC; 
+        --shadow-color: 148, 163, 184;
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #F1F5F9;
+        --brand-chip-border: #E2E8F0;
+        
+        /* FLATTENED EFFECTS */
+        --shadow-glow: none; 
+        --icon-filter: none;
+        text-shadow: none !important;
+        --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
       }
 
-      /* --- NEON (Restored) --- */
+      /* --- 2. NEON --- */
       html.neon {
         --brand-primary: #ccff00; 
         --brand-secondary: #39ff14; 
         --brand-background: #000000; 
-        --brand-surface-rgb: 20, 20, 20; 
+        --brand-surface-rgb: 18, 18, 18;
+        --brand-surface-solid: #121212; 
         --brand-text-primary: #ccff00; 
         --brand-text-secondary: #a3cf00;
         --brand-accent: #ffffff;
         --brand-accent-rgb: 255, 255, 255;
-        --brand-gray-800: #1a1a1a;
-        --brand-gray-700: #333333;
+        --brand-gray-800: #333333;
+        --brand-gray-700: #444444;
         --glass-opacity: 0.9;
         --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
         --shadow-color: 204, 255, 0;
+        --brand-text-on-primary: #000000; 
+        --brand-chip-bg: #333333;
+        --brand-chip-border: #ccff00;
+        --shadow-glow: 0 0 10px var(--brand-primary);
+        --icon-filter: drop-shadow(0 0 2px rgba(204, 255, 0, 0.5));
+        --card-shadow: 0 4px 30px 0 rgba(204, 255, 0, 0.15);
       }
 
-      /* --- DARK MODE --- */
+      /* --- 3. DEEP DARK --- */
       html.dark {
         --brand-primary: #3B82F6;
         --brand-secondary: #60A5FA;
         --brand-background: #020617;
         --brand-surface-rgb: 30, 41, 59;
+        --brand-surface-solid: #1E293B;
         --brand-text-primary: #F8FAFC;
         --brand-text-secondary: #94A3B8;
         --brand-accent: #38BDF8;
         --brand-accent-rgb: 56, 189, 248;
-        --brand-gray-800: #1E293B;
-        --brand-gray-700: #334155;
-        --glass-opacity: 0.75;
+        --brand-gray-800: #334155;
+        --brand-gray-700: #475569;
+        --glass-opacity: 0.8;
         --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #1E293B;
+        --brand-chip-border: #334155;
+        --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
+        --icon-filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));
+        --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
       }
 
-      /* --- MIDNIGHT --- */
+      /* --- 4. MIDNIGHT --- */
       html.midnight {
         --brand-primary: #8B5CF6;
         --brand-secondary: #A78BFA;
-        --brand-surface-rgb: 30, 27, 75; 
+        --brand-surface-rgb: 49, 46, 129;
+        --brand-surface-solid: #312E81;
         --brand-text-primary: #E0E7FF;
         --brand-text-secondary: #A5B4FC;
         --brand-accent: #F472B6;
         --brand-accent-rgb: 244, 114, 182;
-        --brand-gray-800: #312E81;
-        --brand-gray-700: #4338CA;
-        --glass-opacity: 0.65;
+        --brand-gray-800: #4338CA;
+        --brand-gray-700: #6366F1;
+        --glass-opacity: 0.7;
         --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #312E81;
+        --brand-chip-border: #4338CA;
+        --shadow-glow: 0 0 15px rgba(139, 92, 246, 0.3);
+        --icon-filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.4));
+        --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
       }
 
-       /* --- SUNSET --- */
+       /* --- 5. SUNSET --- */
        html.sunset {
         --brand-primary: #F43F5E; 
         --brand-secondary: #FB923C;
-        --brand-surface-rgb: 60, 20, 40;
+        --brand-surface-rgb: 80, 20, 40;
+        --brand-surface-solid: #501428;
         --brand-text-primary: #FFF1F2;
         --brand-text-secondary: #FDA4AF;
         --brand-accent: #FBBF24;
         --brand-accent-rgb: 251, 191, 36;
-        --brand-gray-800: #881337;
-        --brand-gray-700: #9F1239;
+        --brand-gray-800: #9F1239;
+        --brand-gray-700: #BE123C;
         --glass-opacity: 0.7;
         --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #881337;
+        --brand-chip-border: #9F1239;
+        --shadow-glow: 0 0 15px rgba(244, 63, 94, 0.3);
+        --icon-filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.4));
+        --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
       }
 
       body {
@@ -98,16 +164,18 @@
         background-position: center;
         color: var(--brand-text-primary);
         min-height: 100vh;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         -webkit-tap-highlight-color: transparent;
         transition: background 0.5s ease, color 0.3s ease;
+        text-shadow: none !important;
       }
 
-      /* GLOBAL INPUT FIX: Ensures text contrast */
+      svg { filter: var(--icon-filter); transition: filter 0.3s; }
+
       input, textarea, select {
         color: var(--brand-text-primary) !important;
-        background-color: rgba(var(--brand-surface-rgb), 0.5) !important; /* Semi-transparent matching surface */
-        border-color: var(--brand-gray-700) !important;
+        background-color: rgba(var(--brand-surface-rgb), 0.5) !important;
+        border: 1px solid var(--brand-gray-700) !important;
       }
       input::placeholder, textarea::placeholder {
         color: var(--brand-text-secondary) !important;
@@ -118,12 +186,13 @@
         background: rgba(var(--brand-surface-rgb), var(--glass-opacity));
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(var(--brand-gray-700), 0.3);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(var(--brand-gray-700), 0.8);
+        box-shadow: var(--card-shadow);
       }
 
+      .shadow-glow { box-shadow: var(--shadow-glow); }
       .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -131,15 +200,12 @@
       .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--brand-gray-700); border-radius: 10px; }
 
       .btn-floating-action {
-        background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
-        color: white;
-        box-shadow: 0 4px 15px rgba(var(--brand-accent-rgb), 0.4);
-        border: 1px solid rgba(255,255,255,0.2);
+        background: var(--brand-primary);
+        color: var(--brand-text-on-primary);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255,255,255,0.1);
         transition: transform 0.2s, box-shadow 0.2s;
       }
-      /* Neon Theme Button Fix */
-      html.neon .btn-floating-action { color: black; box-shadow: 0 0 20px var(--brand-primary); } 
-      
       .btn-floating-action:active { transform: scale(0.92); }
     </style>
 </head>

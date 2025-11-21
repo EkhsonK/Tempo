@@ -14,14 +14,19 @@ const NavItem: React.FC<{
     onClick: () => void;
     title: string;
 }> = ({ id, icon, isActive, onClick, title }) => {
-    const activeClasses = 'bg-brand-primary text-white shadow-glow scale-110';
-    const inactiveClasses = 'text-brand-text-secondary hover:bg-brand-surface hover:text-brand-primary hover:scale-105';
+    // Active: Solid Primary Color with correct text contrast
+    const activeClasses = 'bg-brand-primary shadow-lg scale-110';
+    const activeStyle = { color: 'var(--brand-text-on-primary)' };
+
+    // Inactive: Subtle text color, subtle hover
+    const inactiveClasses = 'text-brand-text-secondary hover:text-brand-primary hover:bg-brand-surface-rgb/10';
     
     return (
         <button
             onClick={onClick}
             title={title}
-            className={`group w-12 h-12 lg:w-14 lg:h-14 flex items-center justify-center rounded-2xl transition-all duration-300 ease-out ${isActive ? activeClasses : inactiveClasses}`}
+            className={`group w-10 h-10 lg:w-14 lg:h-14 flex items-center justify-center rounded-2xl transition-all duration-300 ease-out ${isActive ? activeClasses : inactiveClasses}`}
+            style={isActive ? activeStyle : {}}
         >
             <div className="transform transition-transform duration-300">
                 {icon}
@@ -32,17 +37,17 @@ const NavItem: React.FC<{
 
 const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
     const navItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
-        { id: 'tasks', label: 'Задачи', icon: <TasksIcon className="w-7 h-7" /> },
-        { id: 'chat', label: 'Чат', icon: <ChatIcon className="w-7 h-7" /> },
-        { id: 'calendar', label: 'Календарь', icon: <CalendarIcon className="w-7 h-7" /> },
-        { id: 'me', label: 'Я', icon: <UserCircleIcon className="w-7 h-7" /> },
-        { id: 'settings', label: 'Настройки', icon: <SettingsIcon className="w-7 h-7" /> },
+        { id: 'tasks', label: 'Задачи', icon: <TasksIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
+        { id: 'chat', label: 'Чат', icon: <ChatIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
+        { id: 'calendar', label: 'Календарь', icon: <CalendarIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
+        { id: 'me', label: 'Я', icon: <UserCircleIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
+        { id: 'settings', label: 'Настройки', icon: <SettingsIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
     ];
 
     return (
         <>
-            {/* Bottom Nav for Mobile & Tablet */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-surface/95 backdrop-blur-xl border-t border-brand-gray-700/30 flex justify-around items-center p-3 z-[50] pb-safe">
+            {/* Bottom Nav for Mobile */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-surface/95 backdrop-blur-xl border-t border-brand-gray-700 flex justify-around items-center p-3 z-[50] pb-safe shadow-[0_-5px_30px_rgba(0,0,0,0.1)]">
                 {navItems.map(item => (
                     <NavItem
                         key={item.id}
@@ -56,10 +61,11 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
             </nav>
 
             {/* Sidebar for Desktop */}
-            <nav className="hidden lg:flex flex-col fixed top-0 left-0 h-full bg-brand-surface/80 backdrop-blur-xl border-r border-brand-gray-700/30 py-8 z-[50] w-24 items-center">
+            <nav className="hidden lg:flex flex-col fixed top-0 left-0 h-full bg-brand-surface/95 backdrop-blur-xl border-r border-brand-gray-700 py-8 z-[50] w-24 items-center shadow-xl">
                 <div className="mb-12">
                     <div className="p-3 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-2xl shadow-lg">
-                        <ListCheckIcon className="w-8 h-8 text-white" />
+                        {/* Fixed Logo Color */}
+                        <ListCheckIcon className="w-8 h-8" style={{ color: 'var(--brand-text-on-primary)' }} />
                     </div>
                 </div>
                 
@@ -75,8 +81,6 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                         />
                     ))}
                 </div>
-                
-                {/* Version removed from bottom as requested */}
             </nav>
         </>
     );

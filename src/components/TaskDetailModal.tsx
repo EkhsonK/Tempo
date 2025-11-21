@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ToDoItem, Priority, SubTask, Attachment, TimeFormat } from '../types';
-import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, CalendarIcon, MicrophoneIcon, BellIcon, RepeatIcon, SearchIcon } from './IconComponents';
+import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, CameraIcon, MicrophoneIcon, BellIcon, RepeatIcon, SearchIcon } from './IconComponents';
 import DateTimePickerModal from './DateTimePickerModal';
 
 interface TaskDetailModalProps {
@@ -13,9 +13,8 @@ interface TaskDetailModalProps {
     categories: string[]; 
 }
 
-// Check Icon for chips
-const ChipCheck: React.FC<{className?: string}> = ({className}) => (
-    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 20 20" fill="currentColor" className={className}>
+const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
 );
@@ -96,7 +95,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
         formData.append('file', file);
 
         try {
-            const response = await fetch('[http://127.0.0.1:5000/api/upload](http://127.0.0.1:5000/api/upload)', { method: 'POST', body: formData });
+            const response = await fetch('http://127.0.0.1:5000/api/upload', { method: 'POST', body: formData });
             if (!response.ok) throw new Error('Upload failed');
             const data = await response.json();
             const newAttachment: Attachment = { id: Date.now(), name: data.name, type: file.type.startsWith('image/') ? 'image' : 'file', url: data.url };
@@ -134,24 +133,28 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                     {/* Content */}
                     <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-grow bg-brand-background/50">
                         
-                        {/* UPDATED CATEGORY CHIPS (Same style as AddTaskModal) */}
+                        {/* UPDATED CATEGORY CHIPS (Matches Add Task with DOTS) */}
                         <div>
                             <p className="text-[10px] text-brand-text-secondary mb-2 font-bold uppercase tracking-wider">Категория</p>
                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                                {categories.map((cat: string) => {
+                                {categories.map((cat, index) => {
                                     const isActive = editedTask.category === cat;
+                                    const dotColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+                                    const dotColor = dotColors[index % dotColors.length];
+                                    
                                     return (
                                         <button
                                             key={cat}
                                             onClick={() => setEditedTask({...editedTask, category: cat})}
                                             className={`
-                                                flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap flex-shrink-0
+                                                flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-shrink-0
                                                 ${isActive 
-                                                    ? 'bg-brand-primary border-brand-primary text-white shadow-glow scale-105' 
-                                                    : 'bg-brand-surface border-brand-gray-700 text-brand-text-secondary hover:border-brand-text-secondary hover:bg-brand-background/50'}
+                                                    ? 'bg-brand-primary text-brand-text-on-primary shadow-md scale-105' 
+                                                    : 'bg-brand-chip-bg text-brand-text-secondary hover:text-brand-text-primary'}
                                             `}
+                                            style={isActive ? { color: 'var(--brand-text-on-primary)' } : { backgroundColor: 'var(--brand-chip-bg)' }}
                                         >
-                                            {isActive && <ChipCheck className="w-3.5 h-3.5" />}
+                                            <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : dotColor}`}></div>
                                             {cat}
                                         </button>
                                     );
@@ -177,7 +180,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider flex items-center gap-2"><PaperclipIcon className="w-4 h-4 text-brand-accent" /> Вложения</h3>
-                                {/* Add Button */}
                                 <button onClick={() => fileInputRef.current?.click()} className="text-xs text-brand-primary hover:underline flex items-center gap-1 font-medium bg-brand-surface/50 px-2 py-1 rounded border border-brand-gray-700 hover:border-brand-primary transition-colors">
                                     <PlusIcon className="w-3 h-3"/> Добавить файл
                                 </button>

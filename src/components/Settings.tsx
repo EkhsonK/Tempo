@@ -5,7 +5,7 @@ import WallpaperGalleryModal from './WallpaperGalleryModal';
 import { api } from '../services/api';
 
 const PaintBrushIcon: React.FC<{ className?: string }> = ({ className }) => (
-     <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
 );
 
 interface SettingsProps {
@@ -38,7 +38,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
     const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
          const file = e.target.files?.[0]; if(!file) return;
          const formData = new FormData(); formData.append('file', file);
-         try { const res = await fetch('[http://127.0.0.1:5000/api/upload](http://127.0.0.1:5000/api/upload)', { method: 'POST', body: formData }); if(res.ok) { const d = await res.json(); handleBackgroundChange(`url(${d.url})`); } } catch(e){ console.error(e); }
+         try { const res = await fetch('http://127.0.0.1:5000/api/upload', { method: 'POST', body: formData }); if(res.ok) { const d = await res.json(); handleBackgroundChange(`url(${d.url})`); } } catch(e){ console.error(e); }
          e.target.value = '';
     };
 
@@ -65,7 +65,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                             <button key={t.id} onClick={() => handleThemeChange(t.id as Theme)} className={`relative h-20 rounded-2xl border-2 transition-all overflow-hidden group ${theme === t.id ? 'border-brand-primary shadow-glow scale-[1.05]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.02]'}`}>
                                 <div className={`absolute inset-0 ${t.bg}`}></div>
                                 <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' ? 'text-gray-800' : 'text-white'} ${t.id === 'neon' ? 'text-lime-400' : ''}`}>{t.name}</span>
-                                {theme === t.id && <div className="absolute top-2 right-2 bg-brand-primary text-white p-1 rounded-full"><svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>}
+                                {theme === t.id && <div className="absolute top-2 right-2 bg-brand-primary text-white p-1 rounded-full"><svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--brand-text-on-primary)' }}><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>}
                             </button>
                         ))}
                     </div>
@@ -83,10 +83,11 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                             type="text" 
                             value={newCategory} 
                             onChange={e => setNewCategory(e.target.value)} 
+                            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
                             placeholder="Новая категория..." 
                             className="flex-grow bg-brand-surface border border-brand-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition-colors text-brand-text-primary"
                         />
-                        <button onClick={handleAddCategory} className="bg-brand-primary text-white p-2 rounded-xl hover:bg-brand-secondary transition-colors"><PlusIcon className="w-5 h-5"/></button>
+                        <button onClick={handleAddCategory} className="bg-brand-primary p-2 rounded-xl hover:bg-brand-secondary transition-colors" style={{ color: 'var(--brand-text-on-primary)' }}><PlusIcon className="w-5 h-5"/></button>
                     </div>
 
                     <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 space-y-2 max-h-[400px]">
@@ -125,28 +126,44 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                         </div>
                      </div>
                      
-                     {/* NEW TIME FORMAT PREVIEW CARD UI */}
+                     {/* IMPROVED TIME FORMAT UI */}
                      <div className="pt-4 border-t border-brand-gray-700">
                         <div className="flex items-center gap-3 mb-4 text-brand-text-secondary">
                             <ClockIcon className="w-5 h-5 text-brand-accent"/> <span className="font-medium text-sm">Формат времени</span>
                         </div>
+                        
                         <div className="grid grid-cols-2 gap-4">
                             <button 
                                 onClick={() => { setTimeFormat('12h'); syncSetting('time_format', '12h'); }} 
-                                className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden ${timeFormat === '12h' ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-gray-700 bg-brand-surface hover:border-brand-text-secondary'}`}
+                                className={`
+                                    relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden
+                                    ${timeFormat === '12h' 
+                                        // Selected State: Brand Primary BG + White Text (ensured via style)
+                                        ? 'border-brand-primary bg-brand-primary shadow-glow scale-[1.02]' 
+                                        // Unselected State: Surface BG + Secondary Text
+                                        : 'border-brand-gray-700 bg-brand-surface text-brand-text-secondary hover:border-brand-text-primary hover:bg-brand-surface-solid/20'}
+                                `}
+                                // FORCE TEXT COLOR for Selected State to avoid theme conflicts
+                                style={timeFormat === '12h' ? { color: 'var(--brand-text-on-primary)' } : {}}
                             >
-                                <span className={`text-2xl font-bold ${timeFormat === '12h' ? 'text-brand-primary' : 'text-brand-text-primary'}`}>12H</span>
-                                <span className="text-xs text-brand-text-secondary">1:30 PM</span>
-                                {timeFormat === '12h' && <div className="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full shadow-glow"></div>}
+                                <span className="text-2xl font-bold">12H</span>
+                                <span className="text-xs opacity-80">1:30 PM</span>
+                                {timeFormat === '12h' && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"></div>}
                             </button>
                             
                             <button 
                                 onClick={() => { setTimeFormat('24h'); syncSetting('time_format', '24h'); }} 
-                                className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden ${timeFormat === '24h' ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-gray-700 bg-brand-surface hover:border-brand-text-secondary'}`}
+                                className={`
+                                    relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden
+                                    ${timeFormat === '24h' 
+                                        ? 'border-brand-primary bg-brand-primary shadow-glow scale-[1.02]' 
+                                        : 'border-brand-gray-700 bg-brand-surface text-brand-text-secondary hover:border-brand-text-primary hover:bg-brand-surface-solid/20'}
+                                `}
+                                style={timeFormat === '24h' ? { color: 'var(--brand-text-on-primary)' } : {}}
                             >
-                                <span className={`text-2xl font-bold ${timeFormat === '24h' ? 'text-brand-primary' : 'text-brand-text-primary'}`}>24H</span>
-                                <span className="text-xs text-brand-text-secondary">13:30</span>
-                                {timeFormat === '24h' && <div className="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full shadow-glow"></div>}
+                                <span className="text-2xl font-bold">24H</span>
+                                <span className="text-xs opacity-80">13:30</span>
+                                {timeFormat === '24h' && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"></div>}
                             </button>
                         </div>
                      </div>
@@ -172,7 +189,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
             {/* DEVELOPER CARD */}
             <div className="glass-panel p-6 rounded-3xl flex flex-col items-center text-center border border-brand-primary/20 shadow-glow">
                 <h4 className="text-sm uppercase tracking-widest text-brand-text-secondary mb-2">Разработано</h4>
-                <a href="[https://github.com/EkhsonK/Tempo-Task-Manager](https://github.com/EkhsonK/Tempo-Task-Manager)" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
+                <a href="https://github.com/EkhsonK/Tempo-Task-Manager" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
                     <span className="text-3xl font-extrabold text-brand-primary">EkhsonK</span>
                     <GitHubIcon className="w-6 h-6 text-brand-text-primary group-hover:text-brand-primary transition-colors"/>
                 </a>
