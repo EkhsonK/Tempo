@@ -65,20 +65,17 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                         <PaintBrushIcon className="w-6 h-6 text-brand-accent" />
                         <h3 className="text-xl font-bold">Тема оформления</h3>
                     </div>
-                    {/* Updated Grid for 7 items */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                         {[
-                            { id: 'light', name: 'Standard', bg: 'bg-gray-100', border: 'border-gray-300' },
-                            { id: 'porcelain', name: 'Porcelain', bg: 'bg-white', border: 'border-gray-200' }, /* NEW WHITE */
-                            { id: 'neon', name: 'Neon', bg: 'bg-black', border: 'border-lime-400' }, /* NEW NEON */
-                            { id: 'dark', name: 'Dark', bg: 'bg-slate-900', border: 'border-slate-700' },
-                            { id: 'midnight', name: 'Midnight', bg: 'bg-indigo-950', border: 'border-indigo-800' },
-                            { id: 'sunset', name: 'Sunset', bg: 'bg-rose-950', border: 'border-rose-900' },
-                            { id: 'liquid', name: 'Liquid', bg: 'bg-cyan-950', border: 'border-cyan-800' }
+                            { id: 'light', name: 'Светлая', bg: 'bg-gray-100', border: 'border-gray-300' },
+                            { id: 'mint', name: 'Мята', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+                            { id: 'dark', name: 'Темная', bg: 'bg-slate-900', border: 'border-slate-700' },
+                            { id: 'midnight', name: 'Полночь', bg: 'bg-indigo-950', border: 'border-indigo-800' },
+                            { id: 'sunset', name: 'Закат', bg: 'bg-rose-950', border: 'border-rose-900' }
                         ].map(t => (
                             <button key={t.id} onClick={() => handleThemeChange(t.id as Theme)} className={`relative h-20 rounded-2xl border-2 transition-all overflow-hidden group ${theme === t.id ? 'border-brand-primary shadow-glow scale-[1.05]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.02]'}`}>
                                 <div className={`absolute inset-0 ${t.bg}`}></div>
-                                <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' || t.id === 'porcelain' ? 'text-gray-800' : 'text-white'} ${t.id === 'neon' ? 'text-lime-400' : ''}`}>{t.name}</span>
+                                <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' || t.id === 'mint' ? 'text-gray-800' : 'text-white'}`}>{t.name}</span>
                                 {theme === t.id && <div className="absolute top-2 right-2 bg-brand-primary text-white p-1 rounded-full"><svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>}
                             </button>
                         ))}

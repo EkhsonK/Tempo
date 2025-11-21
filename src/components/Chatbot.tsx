@@ -27,6 +27,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
 
     const handleSend = async () => {
         if (!input.trim() || isLoading || !selectedTaskId) return;
+        
+        // [CRITICAL] Check for API Key existence immediately
+        if (!process.env.API_KEY && !import.meta.env.VITE_GEMINI_API_KEY) {
+             alert("API Key is missing. Check .env.local file.");
+             return;
+        }
+
         const userMsg: ChatMessage = { author: MessageAuthor.USER, text: input };
         const newHistory = [...currentMessages, userMsg];
         setAllHistories(prev => ({ ...prev, [selectedTaskId]: newHistory }));
@@ -36,10 +43,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
 
         try {
             setAllHistories(prev => ({ ...prev, [selectedTaskId]: [...newHistory, { author: MessageAuthor.AI, text: '' }] }));
-            // Fallback context if task details are missing
-            const context = activeTask ? `Context: Task "${activeTask.text}" (Category: ${activeTask.category}).` : '';
-            const prompt = `${context} User asks: ${input}`;
-            
+            const context = activeTask ? `Task: ${activeTask.text}. Status: ${activeTask.completed ? 'Done' : 'Pending'}. Notes: ${activeTask.notes}` : '';
+            const prompt = `${context}\nUser: ${input}`;
             const stream = streamTaskChat(selectedTaskId, newHistory, prompt);
             let fullResponse = "";
             for await (const chunk of stream) {
@@ -54,7 +59,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
             setError(true);
             setAllHistories(prev => {
                  const history = prev[selectedTaskId] || [];
-                 return { ...prev, [selectedTaskId]: [...history.slice(0, -1), { author: MessageAuthor.AI, text: "⚠️ Не удалось подключиться к AI. Проверьте API ключ." }] };
+                 return { ...prev, [selectedTaskId]: [...history.slice(0, -1), { author: MessageAuthor.AI, text: "⚠️ Ошибка: Проверьте API ключ или лимиты." }] };
             });
         } finally {
             setIsLoading(false);
@@ -63,34 +68,31 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
 
     return (
         <div className="flex flex-col h-full glass-panel rounded-3xl overflow-hidden">
-            {/* Header */}
-            <div className="p-4 border-b border-brand-gray-700 bg-brand-surface flex justify-between items-center">
-                <h2 className="font-bold text-lg text-brand-text-primary truncate pr-2">{activeTask ? activeTask.text : 'AI Ассистент'}</h2>
-                {activeTask && <span className="text-[10px] bg-brand-primary/20 text-brand-primary px-2 py-1 rounded uppercase font-bold tracking-wide">Gemini</span>}
+            <div className="p-4 border-b border-brand-gray-700/50 bg-brand-surface flex justify-between items-center">
+                <h2 className="font-bold text-lg text-brand-text-primary truncate">{activeTask ? activeTask.text : 'AI Ассистент'}</h2>
+                {activeTask && <span className="text-xs bg-brand-primary/20 text-brand-primary px-2 py-1 rounded-lg font-medium">Gemini</span>}
             </div>
             
-            {/* Messages */}
-            <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-brand-background/40">
+            <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar bg-brand-background/30">
                 {!activeTask ? (
-                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary opacity-50 text-center">
+                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary opacity-60 text-center">
                         <MessageIcon className="w-12 h-12 mb-3" />
-                        <p>Выберите задачу, чтобы обсудить её</p>
+                        <p>Выберите задачу для начала</p>
                     </div>
                 ) : currentMessages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-brand-text-secondary opacity-70 text-center p-6">
-                        <SparkleIcon className="w-8 h-8 mb-2 text-brand-accent" />
-                        <p className="text-sm">Я могу помочь с планом действий или подзадачами.</p>
+                    <div className="text-center text-brand-text-secondary text-sm mt-10">
+                        <p>Спросите меня о задаче!</p>
                     </div>
                 ) : (
                     currentMessages.map((msg, idx) => (
                         <div key={idx} className={`flex gap-3 ${msg.author === MessageAuthor.USER ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.author === MessageAuthor.AI ? 'bg-brand-primary text-white' : 'bg-brand-gray-800 text-brand-text-secondary'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.author === MessageAuthor.AI ? 'bg-brand-primary text-white' : 'bg-brand-gray-700 text-brand-text-secondary'}`}>
                                 {msg.author === MessageAuthor.AI ? <SparkleIcon className="w-4 h-4"/> : <UserIcon className="w-4 h-4"/>}
                             </div>
-                            <div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed shadow-sm ${
+                            <div className={`p-3 rounded-2xl text-sm max-w-[85%] leading-relaxed ${
                                 msg.author === MessageAuthor.USER 
                                 ? 'bg-brand-primary text-white rounded-tr-none' 
-                                : 'bg-brand-surface text-brand-text-primary rounded-tl-none border border-brand-gray-700'
+                                : 'bg-brand-surface text-brand-text-primary rounded-tl-none border border-brand-gray-700/30'
                             }`}>
                                 {msg.text}
                             </div>
@@ -100,18 +102,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ selectedTaskId, tasks }) => {
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
-            <div className="p-3 bg-brand-surface border-t border-brand-gray-700">
+            <div className="p-3 bg-brand-surface border-t border-brand-gray-700/30">
                 <div className="relative flex items-center gap-2">
-                    {/* Input: Explicit colors to prevent white-on-white bug */}
                     <input
                         type="text"
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         onKeyPress={e => e.key === 'Enter' && handleSend()}
                         disabled={!activeTask || isLoading}
-                        placeholder={error ? "Ошибка..." : "Напишите сообщение..."}
-                        className="w-full bg-brand-background border border-brand-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm text-brand-text-primary placeholder-brand-text-secondary/70 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all disabled:opacity-50"
+                        placeholder={error ? "Ошибка..." : "Ваш вопрос..."}
+                        className="w-full bg-brand-background border border-brand-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm text-brand-text-primary placeholder-brand-text-secondary focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all disabled:opacity-50"
                     />
                     <button 
                         onClick={handleSend} 

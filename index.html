@@ -10,7 +10,7 @@
     <style>
       :root { --transition-speed: 0.5s; }
       
-      /* --- 1. LIGHT (Classic Blue/White) --- */
+      /* --- LIGHT MODE --- */
       :root {
         --brand-primary: #2563EB; 
         --brand-secondary: #3B82F6;
@@ -27,43 +27,24 @@
         --shadow-color: 0, 0, 0;
       }
 
-      /* --- 2. [NEW] NEON (Cyberpunk Green) --- */
-      /* Replaces Mint */
-      html.neon {
-        --brand-primary: #ccff00; /* Neon Lime */
-        --brand-secondary: #39ff14; /* Electric Green */
-        --brand-background: #000000; /* Pure Black */
-        --brand-surface-rgb: 10, 10, 10; /* Almost Black */
-        --brand-text-primary: #ccff00; /* Matrix Text */
-        --brand-text-secondary: #a3cf00;
-        --brand-accent: #ffffff; /* White Accents */
-        --brand-accent-rgb: 255, 255, 255;
-        --brand-gray-800: #1a1a1a;
-        --brand-gray-700: #333333;
-        --glass-opacity: 0.8;
-        --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
-        --shadow-color: 204, 255, 0; /* Green Glow */
-      }
-
-      /* --- 3. [NEW] PORCELAIN (Ultra White/Mono) --- */
-      /* Requested "White Color System" */
-      html.porcelain {
-        --brand-primary: #171717; /* Neutral Black */
-        --brand-secondary: #404040; /* Neutral Gray */
-        --brand-background: #fafafa; /* Off-White */
+      /* --- MINT --- */
+      html.mint {
+        --brand-primary: #059669;
+        --brand-secondary: #10B981;
+        --brand-background: #ecfdf5;
         --brand-surface-rgb: 255, 255, 255;
-        --brand-text-primary: #000000;
-        --brand-text-secondary: #525252;
-        --brand-accent: #737373;
-        --brand-accent-rgb: 115, 115, 115;
-        --brand-gray-800: #e5e5e5;
-        --brand-gray-700: #d4d4d4;
-        --glass-opacity: 0.9;
-        --bg-gradient: #fafafa;
-        --shadow-color: 0, 0, 0;
+        --brand-text-primary: #064e3b;
+        --brand-text-secondary: #047857;
+        --brand-accent: #0d9488;
+        --brand-accent-rgb: 13, 148, 136;
+        --brand-gray-800: #d1fae5;
+        --brand-gray-700: #a7f3d0;
+        --glass-opacity: 0.85;
+        --bg-gradient: linear-gradient(to bottom right, #ecfdf5, #f0fdfa);
+        --shadow-color: 5, 150, 105;
       }
 
-      /* --- 4. DARK (Deep Slate) --- */
+      /* --- DARK MODE --- */
       html.dark {
         --brand-primary: #3B82F6;
         --brand-secondary: #60A5FA;
@@ -79,7 +60,7 @@
         --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
       }
 
-      /* --- 5. MIDNIGHT (Indigo) --- */
+      /* --- MIDNIGHT --- */
       html.midnight {
         --brand-primary: #8B5CF6;
         --brand-secondary: #A78BFA;
@@ -94,7 +75,7 @@
         --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
       }
 
-       /* --- 6. SUNSET (Golden Hour) --- */
+       /* --- SUNSET --- */
        html.sunset {
         --brand-primary: #F43F5E; 
         --brand-secondary: #FB923C;
@@ -107,24 +88,6 @@
         --brand-gray-700: #9F1239;
         --glass-opacity: 0.6;
         --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
-      }
-
-      /* --- 7. LIQUID GLASS --- */
-      html.liquid {
-        --brand-primary: #22d3ee;
-        --brand-secondary: #818cf8;
-        --brand-surface-rgb: 255, 255, 255;
-        --brand-text-primary: #ffffff;
-        --brand-text-secondary: #cbd5e1;
-        --brand-accent: #c084fc;
-        --brand-accent-rgb: 192, 132, 252;
-        --brand-gray-800: rgba(255,255,255,0.1);
-        --brand-gray-700: rgba(255,255,255,0.2);
-        --glass-opacity: 0.1;
-        --bg-gradient: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                       radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-                       radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%),
-                       linear-gradient(to bottom, #171717, #000000);
       }
 
       body {

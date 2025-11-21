@@ -63,8 +63,8 @@ const App: React.FC = () => {
     useEffect(() => { 
         localStorage.setItem('theme', theme);
         const root = document.documentElement;
-        // REMOVE ALL THEME CLASSES (Updated list)
-        root.classList.remove('dark', 'midnight', 'sunset', 'liquid', 'light', 'mint', 'neon', 'porcelain');
+        // Removed 'liquid' and 'porcelain'
+        root.classList.remove('dark', 'midnight', 'sunset', 'light', 'mint');
         
         if (theme !== 'light') {
             root.classList.add(theme);
