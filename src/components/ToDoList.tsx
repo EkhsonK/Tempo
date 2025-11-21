@@ -70,6 +70,15 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
     
     const listEndRef = useRef<HTMLDivElement>(null);
 
+    // [NEW] Calculate Task Counts per Category
+    const categoryCounts = useMemo(() => {
+        const counts: { [key: string]: number } = { 'Все': todos.length };
+        todos.forEach(todo => {
+            counts[todo.category] = (counts[todo.category] || 0) + 1;
+        });
+        return counts;
+    }, [todos]);
+
     useEffect(() => {
         if (scrollToTaskId !== null && scrollToTaskId !== undefined) {
             const task = todos.find(t => t.id === scrollToTaskId);
@@ -377,9 +386,15 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 </div>
 
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 px-1">
-                     <button onClick={() => setActiveCategory('Все')} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === 'Все' ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>Все</button>
+                     {/* [UPDATED] "All" button with total count */}
+                     <button onClick={() => setActiveCategory('Все')} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === 'Все' ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>
+                        Все ({categoryCounts['Все']})
+                     </button>
+                    {/* [UPDATED] Category buttons with specific counts */}
                     {categories.map(c => (
-                        <button key={c} onClick={() => setActiveCategory(c)} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === c ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>{c}</button>
+                        <button key={c} onClick={() => setActiveCategory(c)} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === c ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>
+                            {c} ({categoryCounts[c] || 0})
+                        </button>
                     ))}
                 </div>
 

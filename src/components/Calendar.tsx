@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './IconComponents';
 
 interface CalendarProps {
@@ -10,7 +10,12 @@ interface CalendarProps {
 const Calendar: React.FC<CalendarProps> = ({ events, selectedDate, onDateSelect }) => {
     const [currentDate, setCurrentDate] = useState(new Date());
 
-    const eventDays = new Set(events.map(e => new Date(e).toISOString().split('T')[0]));
+    // Синхронизация с выбранной датой при открытии
+    useEffect(() => {
+        if (selectedDate) {
+            setCurrentDate(new Date(selectedDate));
+        }
+    }, [selectedDate]);
 
     const changeMonth = (amount: number) => {
         setCurrentDate(prev => {
@@ -20,66 +25,89 @@ const Calendar: React.FC<CalendarProps> = ({ events, selectedDate, onDateSelect 
         });
     };
 
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-    const startingDayOfWeek = firstDayOfMonth.getDay();
-    const daysInMonth = lastDayOfMonth.getDate();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-    // Use local time for "Today" check
-    const now = new Date();
+    // Определяем количество дней в месяце
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Определяем день недели первого числа (0 - Вс, 1 - Пн, ...)
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    
+    // Корректировка для начала недели с Понедельника (Пн=0, ..., Вс=6)
+    // Если firstDayIndex = 0 (Воскресенье), то adjustedIndex должен быть 6.
+    // Если firstDayIndex = 1 (Понедельник), то adjustedIndex должен быть 0.
+    const startOffset = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
 
-    const calendarDays = [];
-    for (let i = 0; i < startingDayOfWeek; i++) {
-        calendarDays.push(<div key={`empty-${i}`} className="h-8"></div>);
-    }
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
-        // Corrected "isToday" check using local date components instead of UTC string
-        const isToday = now.getDate() === day && 
-                        now.getMonth() === currentDate.getMonth() && 
-                        now.getFullYear() === currentDate.getFullYear();
+    const renderDays = () => {
+        const days = [];
 
-        const hasEvent = eventDays.has(dateStr);
-        const isSelected = selectedDate === dateStr;
-        
-        // Improved visual logic:
-        // Selected = Solid Background (Brand Primary)
-        // Today = Ring/Border (Brand Accent) to distinguish if they overlap
-        let dayClasses = "h-8 w-8 flex items-center justify-center rounded-full text-sm cursor-pointer transition-all ";
-        
-        if (isSelected) {
-             dayClasses += "bg-brand-primary text-white font-bold ";
-             if (isToday) dayClasses += "ring-2 ring-brand-accent ring-offset-1 ring-offset-brand-surface-solid ";
-        } else if (isToday) {
-             dayClasses += "border-2 border-brand-accent text-brand-accent font-bold ";
-        } else if (hasEvent) {
-             dayClasses += "bg-brand-secondary/30 hover:bg-brand-secondary/60 ";
-        } else {
-             dayClasses += "hover:bg-gray-700 ";
+        // Пустые ячейки до начала месяца
+        for (let i = 0; i < startOffset; i++) {
+            days.push(<div key={`empty-${i}`} className="h-9 w-9"></div>);
         }
 
-        calendarDays.push(
-            <button key={day} onClick={() => onDateSelect(dateStr)} className={dayClasses}>
-                {day}
-            </button>
-        );
-    }
+        // Дни месяца
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const isSelected = selectedDate === dateStr;
+            
+            // Проверка "Сегодня"
+            const today = new Date();
+            const isToday = today.getDate() === day && today.getMonth() === month && today.getFullYear() === year;
+
+            days.push(
+                <button
+                    key={day}
+                    onClick={() => onDateSelect(dateStr)}
+                    className={`
+                        h-9 w-9 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-200
+                        ${isSelected 
+                            ? 'bg-brand-primary text-brand-text-on-primary shadow-md scale-110 font-bold' 
+                            : isToday 
+                                ? 'text-brand-primary border border-brand-primary font-bold' 
+                                : 'text-brand-text-primary hover:bg-brand-chip-bg hover:text-brand-primary'
+                        }
+                    `}
+                >
+                    {day}
+                </button>
+            );
+        }
+        return days;
+    };
+
+    const weekDays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
     return (
-        <div className="text-brand-text-primary">
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="font-bold text-lg">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
+        <div className="w-full select-none">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4 px-2">
+                <h3 className="text-sm font-bold text-brand-text-primary capitalize">
+                    {currentDate.toLocaleString('ru-RU', { month: 'long', year: 'numeric' })}
+                </h3>
                 <div className="flex gap-1">
-                    <button onClick={() => changeMonth(-1)} className="p-1 rounded-full hover:bg-gray-700"><ChevronLeftIcon className="w-5 h-5" /></button>
-                    <button onClick={() => changeMonth(1)} className="p-1 rounded-full hover:bg-gray-700"><ChevronRightIcon className="w-5 h-5" /></button>
+                    <button onClick={() => changeMonth(-1)} className="p-1.5 rounded-full hover:bg-brand-chip-bg text-brand-text-secondary transition-colors">
+                        <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => changeMonth(1)} className="p-1.5 rounded-full hover:bg-brand-chip-bg text-brand-text-secondary transition-colors">
+                        <ChevronRightIcon className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
-            <div className="grid grid-cols-7 gap-y-1 text-center text-xs text-brand-text-secondary">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => <div key={day}>{day}</div>)}
+
+            {/* Week Days Header */}
+            <div className="grid grid-cols-7 mb-2">
+                {weekDays.map(day => (
+                    <div key={day} className="h-9 flex items-center justify-center text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider opacity-70">
+                        {day}
+                    </div>
+                ))}
             </div>
-            <div className="grid grid-cols-7 gap-y-1 mt-2 text-center">
-                {calendarDays}
+
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 row-gap-2">
+                {renderDays()}
             </div>
         </div>
     );

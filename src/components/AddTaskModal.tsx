@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ToDoItem, Priority, TimeFormat } from '../types';
-import { CalendarIcon, FlagIcon, PlusIcon, CheckIcon } from './IconComponents';
+import { CalendarIcon, FlagIcon, PlusIcon } from './IconComponents';
 import DateTimePickerModal from './DateTimePickerModal';
 
 interface AddTaskModalProps {
@@ -47,66 +47,85 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({ isOpen, onClose, onSave, ca
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-[2px] z-[60]" onClick={onClose} />
+            <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] transition-opacity duration-300" onClick={onClose} />
             
-            <div className={`fixed bottom-0 left-0 right-0 z-[65] glass-panel rounded-t-3xl shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-y-0' : 'translate-y-full'} pb-safe flex flex-col sm:max-w-sm sm:mx-auto sm:mb-20 sm:rounded-3xl`} >
+            {/* Compact Modal - reduced margin-bottom */}
+            <div className={`fixed bottom-0 left-0 right-0 z-[65] glass-panel rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.2)] transform transition-transform duration-300 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'} pb-safe flex flex-col sm:max-w-md sm:mx-auto sm:mb-24 sm:rounded-3xl modal-surface border border-brand-gray-700`} >
                 
-                <div className="w-10 h-1 bg-brand-text-secondary/20 rounded-full mx-auto mt-3 mb-1" />
+                {/* Handle for mobile */}
+                <div className="w-10 h-1 bg-brand-gray-700/50 rounded-full mx-auto mt-2 opacity-50 sm:hidden" />
                 
-                <div className="px-4 py-2">
-                     <textarea
-                        value={text}
-                        onChange={e => setText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Новая задача..."
-                        className="w-full h-12 bg-transparent text-brand-text-primary text-lg placeholder-brand-text-secondary/60 focus:outline-none resize-none font-medium leading-snug"
-                        autoFocus
-                    />
-                </div>
+                <div className="p-5 pt-3 space-y-2">
+                     {/* Improved Input: Absolutely borderless and clean */}
+                     <div className="relative pb-2">
+                        <textarea
+                            value={text}
+                            onChange={e => setText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Что нужно сделать?"
+                            // CRITICAL FIX: Removed border classes, uses transparent background
+                            className="w-full h-12 bg-transparent text-brand-text-primary text-lg font-medium placeholder-brand-text-secondary/40 focus:outline-none resize-none leading-normal border-none ring-0 p-0"
+                            autoFocus
+                        />
+                        {/* Subtle divider line */}
+                        <div className="absolute bottom-0 left-0 right-0 h-px bg-brand-gray-700/20"></div>
+                     </div>
 
-                {/* CATEGORY CHIPS WITH DOTS */}
-                <div className="px-4 pb-3">
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                         {categories.map((cat, index) => {
-                            const isActive = category === cat;
-                            // Generate consistent distinct color dot
-                            const dotColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
-                            const dotColor = dotColors[index % dotColors.length];
+                    {/* Categories Scroll - tighter padding */}
+                    <div className="overflow-x-auto no-scrollbar pb-1 -mx-5 px-5 pt-1">
+                        <div className="flex gap-2">
+                             {categories.map((cat, index) => {
+                                const isActive = category === cat;
+                                const dotColors = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+                                const dotColor = dotColors[index % dotColors.length];
 
-                            return (
-                                <button
-                                    key={cat}
-                                    onClick={() => setCategory(cat)}
-                                    className={`
-                                        flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all border flex-shrink-0
-                                        ${isActive 
-                                            ? 'bg-brand-primary border-brand-primary text-white shadow-sm' 
-                                            : 'bg-brand-chip-bg border-brand-gray-700 text-brand-text-secondary hover:border-brand-text-primary'}
-                                    `}
-                                    style={isActive ? { color: 'var(--brand-text-on-primary)' } : { backgroundColor: 'var(--brand-chip-bg)', borderColor: 'var(--brand-chip-border)' }}
-                                >
-                                    {/* The DOT */}
-                                    <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : dotColor}`}></div>
-                                    {cat}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="px-4 py-3 bg-brand-background/50 border-t border-brand-gray-700 flex justify-between items-center gap-3">
-                    <div className="flex gap-2">
-                        <button onClick={() => setDateTimePickerOpen(true)} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition-colors border ${deadline ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/50' : 'bg-brand-chip-bg border-brand-gray-700 text-brand-text-secondary'}`}>
-                            <CalendarIcon className="w-3.5 h-3.5" /> {deadlineDisplay || 'Дата'}
-                        </button>
-                        <button onClick={() => { const lvls = [Priority.NONE, Priority.LOW, Priority.MEDIUM, Priority.HIGH]; setPriority(lvls[(lvls.indexOf(priority) + 1) % lvls.length]); }} className="p-1.5 rounded-lg bg-brand-chip-bg border border-brand-gray-700 transition-colors">
-                            <FlagIcon priority={priority} className="w-3.5 h-3.5" />
-                        </button>
+                                return (
+                                    <button
+                                        key={cat}
+                                        onClick={() => setCategory(cat)}
+                                        className={`
+                                            flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all flex-shrink-0 border
+                                            ${isActive 
+                                                ? 'bg-brand-primary border-brand-primary text-brand-text-on-primary shadow-sm' 
+                                                : 'bg-brand-chip-bg border-transparent text-brand-text-secondary hover:bg-brand-gray-800'}
+                                        `}
+                                        style={isActive ? { color: 'var(--brand-text-on-primary)' } : {}}
+                                    >
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-white' : dotColor}`}></div>
+                                        {cat}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <button onClick={handleSave} disabled={!text.trim()} className="bg-brand-primary text-white px-5 py-1.5 rounded-lg font-bold text-xs shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-1.5">
-                        <PlusIcon className="w-4 h-4" /> Создать
-                    </button>
+                    {/* Action Bar */}
+                    <div className="flex justify-between items-center pt-1">
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setDateTimePickerOpen(true)} 
+                                className={`flex items-center gap-2 px-3 py-2 rounded-full text-xs font-bold transition-colors border ${deadline ? 'bg-brand-primary/10 text-brand-primary border-brand-primary/30' : 'bg-brand-chip-bg border-transparent text-brand-text-secondary hover:bg-brand-gray-800'}`}
+                            >
+                                <CalendarIcon className="w-4 h-4" /> 
+                                {deadlineDisplay || 'Срок'}
+                            </button>
+                            
+                            <button 
+                                onClick={() => { const lvls = [Priority.NONE, Priority.LOW, Priority.MEDIUM, Priority.HIGH]; setPriority(lvls[(lvls.indexOf(priority) + 1) % lvls.length]); }} 
+                                className={`p-2 rounded-full border transition-colors ${priority !== Priority.NONE ? 'bg-brand-chip-bg border-transparent' : 'border-transparent hover:bg-brand-chip-bg'}`}
+                            >
+                                <FlagIcon priority={priority} className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <button 
+                            onClick={handleSave} 
+                            disabled={!text.trim()} 
+                            className="bg-brand-primary text-brand-text-on-primary w-10 h-10 rounded-full shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-brand-secondary flex items-center justify-center"
+                        >
+                            <PlusIcon className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -131,9 +131,11 @@ const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, user
                                 <div key={idx} className="flex justify-between items-center text-xs">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }}></div>
-                                        <span className="text-brand-text-primary font-medium">{item.label}</span>
+                                        {/* [UPDATED] Integrated count into label */}
+                                        <span className="text-brand-text-primary font-medium">
+                                            {item.label} <span className="text-brand-text-secondary opacity-70">({item.value})</span>
+                                        </span>
                                     </div>
-                                    <span className="text-brand-text-secondary">{item.value}</span>
                                 </div>
                             )) : <p className="text-xs text-brand-text-secondary italic">Нет данных</p>}
                         </div>

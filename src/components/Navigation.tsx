@@ -46,8 +46,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
 
     return (
         <>
-            {/* Bottom Nav for Mobile */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-surface/95 backdrop-blur-xl border-t border-brand-gray-700 flex justify-around items-center p-3 z-[50] pb-safe shadow-[0_-5px_30px_rgba(0,0,0,0.1)]">
+            {/* Bottom Nav for Mobile - Using glass-panel for consistency */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-brand-gray-700 flex justify-around items-center p-3 z-[50] pb-safe shadow-[0_-5px_30px_rgba(0,0,0,0.1)]">
                 {navItems.map(item => (
                     <NavItem
                         key={item.id}
@@ -60,8 +60,8 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                 ))}
             </nav>
 
-            {/* Sidebar for Desktop */}
-            <nav className="hidden lg:flex flex-col fixed top-0 left-0 h-full bg-brand-surface/95 backdrop-blur-xl border-r border-brand-gray-700 py-8 z-[50] w-24 items-center shadow-xl">
+            {/* Sidebar for Desktop - Using glass-panel for consistency */}
+            <nav className="hidden lg:flex flex-col fixed top-0 left-0 h-full glass-panel border-r border-brand-gray-700 py-8 z-[50] w-24 items-center shadow-xl">
                 <div className="mb-12">
                     <div className="p-3 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-2xl shadow-lg">
                         {/* Fixed Logo Color */}

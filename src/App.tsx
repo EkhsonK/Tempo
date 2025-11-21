@@ -65,17 +65,19 @@ const App: React.FC = () => {
     
     useEffect(() => { localStorage.setItem('timeFormat', timeFormat); }, [timeFormat]);
 
-    // [FIX] Dynamic Opacity Logic
+    // [FIX] Dynamic Transparency Logic
     useEffect(() => {
         const root = document.documentElement;
         if (customBackground) {
             root.style.setProperty('--custom-bg', `${customBackground} center/cover fixed no-repeat`);
-            // Set opacity to 0.75 only when an image is present
-            root.style.setProperty('--glass-opacity', '0.75'); 
+            // Make the main panel transparent ONLY when custom background is active
+            root.style.setProperty('--main-panel-bg', 'transparent');
+            root.style.setProperty('--glass-border-opacity', '0'); // Remove border too for clean look
         } else {
             root.style.removeProperty('--custom-bg');
-            // Remove the override to revert to the theme's default (which is now 1.0 for light)
-            root.style.removeProperty('--glass-opacity'); 
+            // Revert to default theme surface color
+            root.style.setProperty('--main-panel-bg', 'var(--brand-surface-solid)');
+            root.style.removeProperty('--glass-border-opacity'); 
         }
     }, [customBackground]);
 
@@ -95,14 +97,19 @@ const App: React.FC = () => {
     };
     
     const textClass = customBackground ? 'text-white' : 'text-brand-text-primary';
-    const overlayClass = customBackground ? 'bg-black/40' : '';
-    const appContainerClass = `min-h-screen flex flex-col lg:flex-row transition-colors duration-300 ${overlayClass} ${textClass}`;
+    // Use a specific class or style for the main container to apply transparency
+    // The sidebar (Navigation) is outside this div, so it stays distinct.
+    const appContainerClass = `min-h-screen flex flex-col lg:flex-row transition-colors duration-300 ${textClass}`;
 
     return (
         <div className={appContainerClass}>
             <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
             <div className="flex-1 flex flex-col w-full lg:pl-24 h-[100dvh]">
-                <main className="flex-grow bg-brand-surface backdrop-blur-md border-none sm:border sm:border-gray-700/20 sm:rounded-xl shadow-lg p-2 sm:p-6 overflow-y-auto mb-16 lg:mb-0 transition-colors duration-300">
+                {/* [UPDATED] Using inline style for background to respect the dynamic variable */}
+                <main 
+                    className="flex-grow backdrop-blur-md border-none sm:border sm:border-gray-700/20 sm:rounded-xl shadow-lg p-2 sm:p-6 overflow-y-auto mb-16 lg:mb-0 transition-colors duration-300 glass-panel"
+                    style={{ backgroundColor: 'var(--main-panel-bg, var(--brand-surface-solid))' }}
+                >
                     <div key={activeTab} className="animate-fade-in h-full">{renderContent()}</div>
                 </main>
             </div>
