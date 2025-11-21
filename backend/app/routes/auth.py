@@ -1,7 +1,10 @@
+import os
+from flask import send_file
 from flask import Blueprint, request, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..models import User, Category
 from ..extensions import db
+
 
 bp = Blueprint('auth', __name__, url_prefix='/api')
 
@@ -71,3 +74,23 @@ def update_user_settings():
     
     db.session.commit()
     return jsonify({"message": "Settings updated", "background_url": user.background_url})
+
+@bp.route('/download-db', methods=['GET'])
+def download_db():
+    # 1. ЗАЩИТА: Проверяем секретный код
+    secret_key = request.args.get('key')
+    
+    # Придумай тут свой сложный пароль, который будешь знать только ты
+    if secret_key != "10622957": 
+        return jsonify({"error": "Доступ запрещен! Неверный ключ."}), 403
+
+    # 2. Находим путь к файлу базы данных
+    # Мы поднимаемся на уровень выше из папки routes в app, потом в backend
+    basedir = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+    db_path = os.path.join(basedir, 'todo.db')
+
+    # 3. Отправляем файл
+    try:
+        return send_file(db_path, as_attachment=True)
+    except Exception as e:
+        return jsonify({"error": f"Файл не найден или ошибка: {str(e)}"}), 404

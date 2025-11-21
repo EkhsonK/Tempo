@@ -2,22 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tempo</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233B82F6'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z' clip-rule='evenodd'/%3E%3C/svg%3E" />
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      :root { --transition-speed: 0.5s; }
+      :root { --transition-speed: 0.4s; }
       
-      /* --- LIGHT MODE --- */
+      /* --- LIGHT MODE (Pure White) --- */
       :root {
         --brand-primary: #2563EB; 
         --brand-secondary: #3B82F6;
         --brand-background: #FFFFFF; 
-        --brand-surface-rgb: 255, 255, 255;
+        --brand-surface-rgb: 245, 245, 245; /* Slightly darker surface for contrast */
         --brand-text-primary: #0F172A;
-        --brand-text-secondary: #64748B;
+        --brand-text-secondary: #475569;
         --brand-accent: #06B6D4;
         --brand-accent-rgb: 6, 182, 212;
         --brand-gray-800: #E2E8F0;
@@ -27,21 +27,21 @@
         --shadow-color: 0, 0, 0;
       }
 
-      /* --- MINT --- */
-      html.mint {
-        --brand-primary: #059669;
-        --brand-secondary: #10B981;
-        --brand-background: #ecfdf5;
-        --brand-surface-rgb: 255, 255, 255;
-        --brand-text-primary: #064e3b;
-        --brand-text-secondary: #047857;
-        --brand-accent: #0d9488;
-        --brand-accent-rgb: 13, 148, 136;
-        --brand-gray-800: #d1fae5;
-        --brand-gray-700: #a7f3d0;
-        --glass-opacity: 0.85;
-        --bg-gradient: linear-gradient(to bottom right, #ecfdf5, #f0fdfa);
-        --shadow-color: 5, 150, 105;
+      /* --- NEON (Restored) --- */
+      html.neon {
+        --brand-primary: #ccff00; 
+        --brand-secondary: #39ff14; 
+        --brand-background: #000000; 
+        --brand-surface-rgb: 20, 20, 20; 
+        --brand-text-primary: #ccff00; 
+        --brand-text-secondary: #a3cf00;
+        --brand-accent: #ffffff;
+        --brand-accent-rgb: 255, 255, 255;
+        --brand-gray-800: #1a1a1a;
+        --brand-gray-700: #333333;
+        --glass-opacity: 0.9;
+        --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
+        --shadow-color: 204, 255, 0;
       }
 
       /* --- DARK MODE --- */
@@ -49,14 +49,14 @@
         --brand-primary: #3B82F6;
         --brand-secondary: #60A5FA;
         --brand-background: #020617;
-        --brand-surface-rgb: 15, 23, 42;
+        --brand-surface-rgb: 30, 41, 59;
         --brand-text-primary: #F8FAFC;
         --brand-text-secondary: #94A3B8;
         --brand-accent: #38BDF8;
         --brand-accent-rgb: 56, 189, 248;
         --brand-gray-800: #1E293B;
         --brand-gray-700: #334155;
-        --glass-opacity: 0.6;
+        --glass-opacity: 0.75;
         --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
       }
 
@@ -71,7 +71,7 @@
         --brand-accent-rgb: 244, 114, 182;
         --brand-gray-800: #312E81;
         --brand-gray-700: #4338CA;
-        --glass-opacity: 0.5;
+        --glass-opacity: 0.65;
         --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
       }
 
@@ -86,7 +86,7 @@
         --brand-accent-rgb: 251, 191, 36;
         --brand-gray-800: #881337;
         --brand-gray-700: #9F1239;
-        --glass-opacity: 0.6;
+        --glass-opacity: 0.7;
         --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
       }
 
@@ -98,72 +98,52 @@
         background-position: center;
         color: var(--brand-text-primary);
         min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        -webkit-tap-highlight-color: transparent;
         transition: background 0.5s ease, color 0.3s ease;
+      }
+
+      /* GLOBAL INPUT FIX: Ensures text contrast */
+      input, textarea, select {
+        color: var(--brand-text-primary) !important;
+        background-color: rgba(var(--brand-surface-rgb), 0.5) !important; /* Semi-transparent matching surface */
+        border-color: var(--brand-gray-700) !important;
+      }
+      input::placeholder, textarea::placeholder {
+        color: var(--brand-text-secondary) !important;
+        opacity: 0.7;
       }
 
       .glass-panel {
         background: rgba(var(--brand-surface-rgb), var(--glass-opacity));
-        backdrop-filter: blur(20px) saturate(180%);
-        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(var(--brand-gray-700), 0.3);
         box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
       }
 
-      .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+      .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       
-      .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .custom-scrollbar::-webkit-scrollbar { width: 4px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--brand-gray-700); border-radius: 10px; }
-      .no-scrollbar::-webkit-scrollbar { display: none; }
 
       .btn-floating-action {
         background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
         color: white;
-        box-shadow: 0 8px 20px -5px rgba(var(--brand-accent-rgb), 0.5);
-        border: 1px solid rgba(255,255,255,0.3);
+        box-shadow: 0 4px 15px rgba(var(--brand-accent-rgb), 0.4);
+        border: 1px solid rgba(255,255,255,0.2);
         transition: transform 0.2s, box-shadow 0.2s;
       }
-      .btn-floating-action:hover { transform: scale(1.1) rotate(90deg); box-shadow: 0 12px 30px -5px rgba(var(--brand-accent-rgb), 0.7); }
-      .btn-floating-action:active { transform: scale(0.95); }
+      /* Neon Theme Button Fix */
+      html.neon .btn-floating-action { color: black; box-shadow: 0 0 20px var(--brand-primary); } 
+      
+      .btn-floating-action:active { transform: scale(0.92); }
     </style>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              'brand-primary': 'var(--brand-primary)',
-              'brand-secondary': 'var(--brand-secondary)',
-              'brand-background': 'transparent', 
-              'brand-surface': 'rgba(var(--brand-surface-rgb), var(--glass-opacity))',
-              'brand-text-primary': 'var(--brand-text-primary)',
-              'brand-text-secondary': 'var(--brand-text-secondary)',
-              'brand-accent': 'var(--brand-accent)',
-              'brand-gray-800': 'var(--brand-gray-800)',
-              'brand-gray-700': 'var(--brand-gray-700)',
-            },
-            boxShadow: { 'glow': '0 0 20px -5px rgba(var(--brand-accent-rgb), 0.4)', }
-          },
-        },
-      }
-    </script>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "path": "https://aistudiocdn.com/path@^0.12.7",
-    "vite": "https://aistudiocdn.com/vite@^7.2.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
-    "url": "https://aistudiocdn.com/url@^0.11.4"
-  }
-}
-</script>
 </head>
-  <body class="transition-colors duration-300">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>

@@ -5,7 +5,7 @@ import WallpaperGalleryModal from './WallpaperGalleryModal';
 import { api } from '../services/api';
 
 const PaintBrushIcon: React.FC<{ className?: string }> = ({ className }) => (
-     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
+     <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" /></svg>
 );
 
 interface SettingsProps {
@@ -18,7 +18,6 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTimeFormat, backupData, onRestore, setCustomBackground, categories, setCategories, todos, setTodos, onLogout }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
     const bgUploadRef = useRef<HTMLInputElement>(null);
-    const [isRestoring, setIsRestoring] = useState(false);
     const [newCategory, setNewCategory] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -34,27 +33,17 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
         const file = e.target.files?.[0]; if (!file) return;
         if (!window.confirm("Импорт перезапишет данные. Продолжить?")) return;
-        setIsRestoring(true);
-        const r = new FileReader(); 
-        r.onload = (ev) => { 
-            try { 
-                onRestore(JSON.parse(ev.target?.result as string)); 
-            } catch(e){ alert('Ошибка файла'); } 
-            finally { setIsRestoring(false); }
-        }; 
-        r.readAsText(file); e.target.value='';
+        const r = new FileReader(); r.onload = (ev) => { try { onRestore(JSON.parse(ev.target?.result as string)); } catch(e){ alert('Ошибка файла'); } }; r.readAsText(file); e.target.value='';
     };
     const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
          const file = e.target.files?.[0]; if(!file) return;
          const formData = new FormData(); formData.append('file', file);
-         try { const res = await fetch('http://127.0.0.1:5000/api/upload', { method: 'POST', body: formData }); if(res.ok) { const d = await res.json(); handleBackgroundChange(`url(${d.url})`); } } catch(e){ console.error(e); }
+         try { const res = await fetch('[http://127.0.0.1:5000/api/upload](http://127.0.0.1:5000/api/upload)', { method: 'POST', body: formData }); if(res.ok) { const d = await res.json(); handleBackgroundChange(`url(${d.url})`); } } catch(e){ console.error(e); }
          e.target.value = '';
     };
 
     return (
         <div className="max-w-5xl mx-auto pb-12 space-y-8 animate-fade-in">
-            {isRestoring && <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-4 border-brand-primary"></div></div>}
-
             <h1 className="text-3xl font-bold text-brand-text-primary pl-2">Настройки</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -67,15 +56,15 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                         {[
-                            { id: 'light', name: 'Светлая', bg: 'bg-gray-100', border: 'border-gray-300' },
-                            { id: 'mint', name: 'Мята', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-                            { id: 'dark', name: 'Темная', bg: 'bg-slate-900', border: 'border-slate-700' },
-                            { id: 'midnight', name: 'Полночь', bg: 'bg-indigo-950', border: 'border-indigo-800' },
-                            { id: 'sunset', name: 'Закат', bg: 'bg-rose-950', border: 'border-rose-900' }
+                            { id: 'light', name: 'Pro Light', bg: 'bg-white', border: 'border-gray-200' },
+                            { id: 'dark', name: 'Deep Dark', bg: 'bg-gray-900', border: 'border-gray-700' },
+                            { id: 'midnight', name: 'Midnight', bg: 'bg-indigo-950', border: 'border-indigo-800' },
+                            { id: 'sunset', name: 'Sunset', bg: 'bg-orange-900', border: 'border-orange-800' },
+                            { id: 'neon', name: 'Neon', bg: 'bg-black', border: 'border-lime-400' }
                         ].map(t => (
                             <button key={t.id} onClick={() => handleThemeChange(t.id as Theme)} className={`relative h-20 rounded-2xl border-2 transition-all overflow-hidden group ${theme === t.id ? 'border-brand-primary shadow-glow scale-[1.05]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.02]'}`}>
                                 <div className={`absolute inset-0 ${t.bg}`}></div>
-                                <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' || t.id === 'mint' ? 'text-gray-800' : 'text-white'}`}>{t.name}</span>
+                                <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' ? 'text-gray-800' : 'text-white'} ${t.id === 'neon' ? 'text-lime-400' : ''}`}>{t.name}</span>
                                 {theme === t.id && <div className="absolute top-2 right-2 bg-brand-primary text-white p-1 rounded-full"><svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>}
                             </button>
                         ))}
@@ -95,7 +84,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                             value={newCategory} 
                             onChange={e => setNewCategory(e.target.value)} 
                             placeholder="Новая категория..." 
-                            className="flex-grow bg-brand-background/50 border border-brand-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition-colors"
+                            className="flex-grow bg-brand-surface border border-brand-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition-colors text-brand-text-primary"
                         />
                         <button onClick={handleAddCategory} className="bg-brand-primary text-white p-2 rounded-xl hover:bg-brand-secondary transition-colors"><PlusIcon className="w-5 h-5"/></button>
                     </div>
@@ -135,13 +124,30 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                             <button onClick={() => handleBackgroundChange(null)} className="bg-brand-surface border border-brand-gray-700 text-brand-text-primary py-2 rounded-xl text-xs font-medium hover:bg-brand-gray-700 transition-colors col-span-2">Сбросить</button>
                         </div>
                      </div>
+                     
+                     {/* NEW TIME FORMAT PREVIEW CARD UI */}
                      <div className="pt-4 border-t border-brand-gray-700">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2"><ClockIcon className="w-5 h-5 text-brand-text-secondary"/> <span className="font-medium">Формат времени</span></div>
+                        <div className="flex items-center gap-3 mb-4 text-brand-text-secondary">
+                            <ClockIcon className="w-5 h-5 text-brand-accent"/> <span className="font-medium text-sm">Формат времени</span>
                         </div>
-                        <div className="flex bg-brand-background/50 p-1 rounded-xl border border-brand-gray-700/30">
-                            <button onClick={() => { setTimeFormat('12h'); syncSetting('time_format', '12h'); }} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${timeFormat === '12h' ? 'bg-brand-surface shadow text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}>12 Ч</button>
-                            <button onClick={() => { setTimeFormat('24h'); syncSetting('time_format', '24h'); }} className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${timeFormat === '24h' ? 'bg-brand-surface shadow text-brand-primary' : 'text-brand-text-secondary hover:text-brand-text-primary'}`}>24 Ч</button>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button 
+                                onClick={() => { setTimeFormat('12h'); syncSetting('time_format', '12h'); }} 
+                                className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden ${timeFormat === '12h' ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-gray-700 bg-brand-surface hover:border-brand-text-secondary'}`}
+                            >
+                                <span className={`text-2xl font-bold ${timeFormat === '12h' ? 'text-brand-primary' : 'text-brand-text-primary'}`}>12H</span>
+                                <span className="text-xs text-brand-text-secondary">1:30 PM</span>
+                                {timeFormat === '12h' && <div className="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full shadow-glow"></div>}
+                            </button>
+                            
+                            <button 
+                                onClick={() => { setTimeFormat('24h'); syncSetting('time_format', '24h'); }} 
+                                className={`relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden ${timeFormat === '24h' ? 'border-brand-primary bg-brand-primary/10' : 'border-brand-gray-700 bg-brand-surface hover:border-brand-text-secondary'}`}
+                            >
+                                <span className={`text-2xl font-bold ${timeFormat === '24h' ? 'text-brand-primary' : 'text-brand-text-primary'}`}>24H</span>
+                                <span className="text-xs text-brand-text-secondary">13:30</span>
+                                {timeFormat === '24h' && <div className="absolute top-2 right-2 w-2 h-2 bg-brand-primary rounded-full shadow-glow"></div>}
+                            </button>
                         </div>
                      </div>
                 </div>
@@ -163,11 +169,10 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                 </div>
             </div>
 
-            {/* DEVELOPER CARD - FIXED NAME VISIBILITY */}
+            {/* DEVELOPER CARD */}
             <div className="glass-panel p-6 rounded-3xl flex flex-col items-center text-center border border-brand-primary/20 shadow-glow">
                 <h4 className="text-sm uppercase tracking-widest text-brand-text-secondary mb-2">Разработано</h4>
-                <a href="https://github.com/EkhsonK/Tempo" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
-                    {/* Solid color for perfect visibility */}
+                <a href="[https://github.com/EkhsonK/Tempo-Task-Manager](https://github.com/EkhsonK/Tempo-Task-Manager)" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
                     <span className="text-3xl font-extrabold text-brand-primary">EkhsonK</span>
                     <GitHubIcon className="w-6 h-6 text-brand-text-primary group-hover:text-brand-primary transition-colors"/>
                 </a>

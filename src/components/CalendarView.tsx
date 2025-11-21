@@ -11,9 +11,10 @@ interface CalendarViewProps {
     onLocateTask: (id: number) => void;
     timeFormat: TimeFormat;
     isGuest: boolean;
+    categories: string[];
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({ todos, setTodos, onLocateTask, timeFormat, isGuest }) => {
+const CalendarView: React.FC<CalendarViewProps> = ({ todos, setTodos, onLocateTask, timeFormat, isGuest, categories }) => {
     const [selectedDate, setSelectedDate] = useState<string | null>(() => {
         const now = new Date();
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -51,14 +52,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, setTodos, onLocateTa
     
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-full animate-fade-in">
-            {/* Calendar Column */}
             <div className="lg:w-[400px] flex-shrink-0">
                 <div className="glass-panel p-6 rounded-3xl h-full">
                      <Calendar events={todos.map(t => t.deadline).filter(Boolean) as string[]} selectedDate={selectedDate} onDateSelect={setSelectedDate} />
                 </div>
             </div>
 
-            {/* Tasks Column */}
             <div className="flex-1 glass-panel p-6 rounded-3xl flex flex-col overflow-hidden">
                 <h2 className="text-2xl font-bold text-brand-text-primary mb-6 flex items-center gap-3">
                     <span className="text-brand-primary">{selectedDate ? new Date(selectedDate).getDate() : ''}</span>
@@ -96,7 +95,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, setTodos, onLocateTa
                 </div>
             </div>
             
-            {/* Modal with onLocate passed to show "Find in list" */}
             <TaskDetailModal 
                 task={selectedTask} 
                 onClose={() => setSelectedTask(null)} 
@@ -104,6 +102,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({ todos, setTodos, onLocateTa
                 onDelete={deleteTodo}
                 onLocate={onLocateTask}
                 timeFormat={timeFormat}
+                categories={categories}
             />
         </div>
     );

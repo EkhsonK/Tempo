@@ -14,9 +14,10 @@ interface MeProps {
     username?: string | null;
     isGuest?: boolean;
     onLogout?: () => void;
+    categories: string[];
 }
 
-const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, username, isGuest, onLogout }) => {
+const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, username, isGuest, onLogout, categories }) => {
     const [selectedTask, setSelectedTask] = useState<ToDoItem | null>(null);
 
     const stats = useMemo(() => {
@@ -38,9 +39,19 @@ const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, user
         return todos.filter(t => !t.completed && t.deadline && new Date(t.deadline) >= now && new Date(t.deadline) <= week).sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime());
     }, [todos]);
 
+    const updateTodo = async (id: number, updates: Partial<ToDoItem>) => {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates, lastModified: new Date().toISOString() } : t));
+        if (!isGuest) await api.updateTodo(id, updates);
+    };
+
+    const deleteTodo = async (id: number) => {
+        setTodos(prev => prev.filter(t => t.id !== id));
+        setSelectedTask(null);
+        if (!isGuest) await api.deleteTodo(id);
+    };
+
     return (
         <div className="animate-fade-in pb-20 max-w-6xl mx-auto text-brand-text-primary space-y-6">
-            
             <div className="glass-panel p-8 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-primary to-brand-accent p-0.5 shadow-glow">
@@ -81,12 +92,7 @@ const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, user
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    {/* Direct Find-in-List Button */}
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); onLocateTask(task.id); }}
-                                        className="p-2 text-brand-text-secondary hover:text-brand-primary hover:bg-brand-surface rounded-full transition-colors"
-                                        title="Find in list"
-                                    >
+                                    <button onClick={(e) => { e.stopPropagation(); onLocateTask(task.id); }} className="p-2 text-brand-text-secondary hover:text-brand-primary hover:bg-brand-surface rounded-full transition-colors" title="Find in list">
                                         <SearchIcon className="w-5 h-5" />
                                     </button>
                                     <ChevronRightIcon className="w-5 h-5 text-brand-text-secondary group-hover:text-brand-primary" />
@@ -116,10 +122,11 @@ const Me: React.FC<MeProps> = ({ todos, setTodos, onLocateTask, timeFormat, user
             <TaskDetailModal 
                 task={selectedTask} 
                 onClose={() => setSelectedTask(null)} 
-                onUpdate={(id, u) => { setTodos(p => p.map(t => t.id === id ? { ...t, ...u } : t)); if (!isGuest) api.updateTodo(id, u); }} 
-                onDelete={(id) => { setTodos(p => p.filter(t => t.id !== id)); setSelectedTask(null); if (!isGuest) api.deleteTodo(id); }} 
+                onUpdate={updateTodo} 
+                onDelete={deleteTodo} 
                 onLocate={onLocateTask} 
-                timeFormat={timeFormat} 
+                timeFormat={timeFormat}
+                categories={categories}
             />
         </div>
     );

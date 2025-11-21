@@ -1,6 +1,6 @@
 import React, { useState, useMemo, Dispatch, SetStateAction, useRef, useEffect } from 'react';
 import { ToDoItem, Priority, ActiveTab, TimeFormat } from '../types';
-import { PlusIcon, ClockIcon, MessageIcon, FlagIcon, SearchIcon, NoteIcon, ListCheckIcon, CancelIcon } from './IconComponents';
+import { PlusIcon, ClockIcon, MessageIcon, FlagIcon, SearchIcon, NoteIcon, ListCheckIcon, CancelIcon, PaperclipIcon } from './IconComponents';
 import AddTaskModal from './AddTaskModal';
 import TaskDetailModal from './TaskDetailModal';
 import { api } from '../services/api';
@@ -131,7 +131,7 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
             subtasks: [],
             lastModified: new Date().toISOString(),
             notes: '',
-            attachments: [],
+            attachments: taskData.attachments || [],
             reminder: taskData.reminder || 'Нет',
             repeat: taskData.repeat || 'Никогда',
         };
@@ -315,6 +315,13 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                             {formatTimeRemaining(todo.deadline).text && <span className={`${formatTimeRemaining(todo.deadline).color} ml-1`}>({formatTimeRemaining(todo.deadline).text})</span>}
                         </span>
                     )}
+
+                    {/* Attachment Indicator */}
+                    {todo.attachments && todo.attachments.length > 0 && (
+                        <span className="flex items-center gap-1 text-xs text-brand-text-secondary ml-1">
+                            <PaperclipIcon className="w-3 h-3" />
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -352,7 +359,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
 
     return (
         <div className="flex flex-col gap-4 h-full relative">
-            {/* Header: Search & Categories */}
             <div className="flex flex-col gap-4 p-1 pb-2">
                 <div className="relative w-full">
                     <SearchIcon className="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2"/>
@@ -382,7 +388,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 </div>
             </div>
 
-            {/* Task List */}
             <div className="overflow-y-auto flex-grow pr-1 pb-20 no-scrollbar">
                 {searchQuery ? (
                      groupedTodos.searchResults.length === 0 ? (
@@ -419,7 +424,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 <div ref={listEndRef} />
             </div>
 
-            {/* Floating Add Button - Blue Glow */}
             <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-[55] group">
                 <div className="btn-glow-container"></div>
                 <button 
@@ -431,10 +435,8 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                 </button>
             </div>
 
-            {/* Modals */}
-            {/* NOTE: Removed "Find in list" onLocate passed to Modal from this view, as user is already in list */}
             <AddTaskModal isOpen={isAddTaskModalOpen} onClose={() => setAddTaskModalOpen(false)} onSave={handleSaveNewTodo} categories={categories} initialCategory={activeCategory} timeFormat={timeFormat} />
-            <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTodo} onDelete={(id) => handleDeleteTodo(id)} timeFormat={timeFormat} />
+            <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onUpdate={updateTodo} onDelete={(id) => handleDeleteTodo(id)} timeFormat={timeFormat} categories={categories} />
         </div>
     );
 };

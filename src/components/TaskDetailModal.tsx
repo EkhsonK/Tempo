@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ToDoItem, Priority, SubTask, Attachment, TimeFormat } from '../types';
-import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, CameraIcon, MicrophoneIcon, BellIcon, RepeatIcon, SearchIcon } from './IconComponents';
+import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, CalendarIcon, MicrophoneIcon, BellIcon, RepeatIcon, SearchIcon } from './IconComponents';
 import DateTimePickerModal from './DateTimePickerModal';
 
 interface TaskDetailModalProps {
@@ -10,15 +10,21 @@ interface TaskDetailModalProps {
     onDelete?: (id: number) => void;
     onLocate?: (id: number) => void;
     timeFormat?: TimeFormat;
+    categories: string[]; 
 }
 
-const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpdate, onDelete, onLocate, timeFormat = '12h' }) => {
+// Check Icon for chips
+const ChipCheck: React.FC<{className?: string}> = ({className}) => (
+    <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 20 20" fill="currentColor" className={className}>
+        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+    </svg>
+);
+
+const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpdate, onDelete, onLocate, timeFormat = '12h', categories }) => {
     const [editedTask, setEditedTask] = useState<ToDoItem | null>(null);
     const [isDateTimePickerOpen, setDateTimePickerOpen] = useState(false);
     const [newSubtaskText, setNewSubtaskText] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
-    // Reads categories from local storage to display chips
-    const [categories] = useState(() => JSON.parse(localStorage.getItem('categories') || '["Общее", "Работа", "Личное"]'));
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
@@ -83,46 +89,24 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
         setEditedTask({ ...editedTask, priority: levels[(idx + 1) % levels.length] });
     };
 
-    // --- UPDATED: Persistent File Upload Logic ---
     const handleFileAttachment = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files || event.target.files.length === 0) return;
         const file = event.target.files[0];
-
-        // Create FormData to send to backend
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            // Upload to the new Flask endpoint
-            const response = await fetch('http://127.0.0.1:5000/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
+            const response = await fetch('[http://127.0.0.1:5000/api/upload](http://127.0.0.1:5000/api/upload)', { method: 'POST', body: formData });
             if (!response.ok) throw new Error('Upload failed');
-
             const data = await response.json();
-
-            // Use the PERMANENT URL returned by the server
-            const newAttachment: Attachment = {
-                id: Date.now(),
-                name: data.name,     
-                type: file.type.startsWith('image/') ? 'image' : 'file',
-                url: data.url        
-            };
-            
-            setEditedTask({ 
-                ...editedTask, 
-                attachments: [...(editedTask.attachments || []), newAttachment] 
-            });
+            const newAttachment: Attachment = { id: Date.now(), name: data.name, type: file.type.startsWith('image/') ? 'image' : 'file', url: data.url };
+            setEditedTask({ ...editedTask, attachments: [...(editedTask.attachments || []), newAttachment] });
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Не удалось загрузить файл. Убедитесь, что сервер (run.py) запущен.");
+            alert("Не удалось загрузить файл.");
         }
-        
         event.target.value = ''; 
     };
-    // --------------------------------------------
 
     const deleteAttachment = (attId: number) => {
         setEditedTask({ ...editedTask, attachments: (editedTask.attachments || []).filter(a => a.id !== attId) });
@@ -130,13 +114,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
 
     return (
         <>
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fade-in" onClick={onClose}>
-                <div className="bg-brand-background border border-brand-gray-700 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4 animate-fade-in" onClick={onClose}>
+                <div className="glass-panel w-full max-w-lg rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl" onClick={e => e.stopPropagation()}>
                     
                     {/* Header */}
-                    <div className="p-6 border-b border-brand-gray-700 flex justify-between items-start gap-4">
+                    <div className="p-6 border-b border-brand-gray-700 flex justify-between items-start gap-4 bg-brand-surface">
                         <div className="flex-grow">
-                            <label className="text-xs text-brand-text-secondary font-bold uppercase tracking-wider mb-1 block">Название задачи</label>
+                            <label className="text-[10px] text-brand-text-secondary font-bold uppercase tracking-wider mb-1 block">Задача</label>
                             <input 
                                 type="text" 
                                 value={editedTask.text}
@@ -148,58 +132,76 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                     </div>
 
                     {/* Content */}
-                    <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-grow bg-brand-background">
+                    <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-grow bg-brand-background/50">
                         
-                        {/* Category Chips - Horizontal Scroll */}
+                        {/* UPDATED CATEGORY CHIPS (Same style as AddTaskModal) */}
                         <div>
-                            <p className="text-xs text-brand-text-secondary mb-2 font-bold uppercase tracking-wider">Категория</p>
-                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                                {categories.map((cat: string) => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setEditedTask({...editedTask, category: cat})}
-                                        className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border whitespace-nowrap flex-shrink-0 ${
-                                            editedTask.category === cat
-                                            ? 'bg-brand-primary border-brand-primary text-white shadow-glow-primary'
-                                            : 'bg-brand-surface border-brand-gray-700 text-brand-text-secondary hover:border-brand-primary hover:text-brand-text-primary'
-                                        }`}
-                                    >
-                                        {cat}
-                                    </button>
-                                ))}
+                            <p className="text-[10px] text-brand-text-secondary mb-2 font-bold uppercase tracking-wider">Категория</p>
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                                {categories.map((cat: string) => {
+                                    const isActive = editedTask.category === cat;
+                                    return (
+                                        <button
+                                            key={cat}
+                                            onClick={() => setEditedTask({...editedTask, category: cat})}
+                                            className={`
+                                                flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border whitespace-nowrap flex-shrink-0
+                                                ${isActive 
+                                                    ? 'bg-brand-primary border-brand-primary text-white shadow-glow scale-105' 
+                                                    : 'bg-brand-surface border-brand-gray-700 text-brand-text-secondary hover:border-brand-text-secondary hover:bg-brand-background/50'}
+                                            `}
+                                        >
+                                            {isActive && <ChipCheck className="w-3.5 h-3.5" />}
+                                            {cat}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             {/* Date */}
-                            <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 hover:bg-brand-surface-solid/50 transition-colors cursor-pointer relative overflow-hidden" onClick={() => setDateTimePickerOpen(true)}>
-                                <p className="text-xs text-brand-text-secondary mb-1 flex items-center gap-1"><ClockIcon className="w-3 h-3"/> Срок</p>
-                                <p className="text-sm font-medium text-brand-primary truncate">{editedTask.deadline ? new Date(editedTask.deadline).toLocaleString('ru-RU', { hour12: timeFormat === '12h' }) : 'Установить срок'}</p>
-                                {(editedTask.reminder && editedTask.reminder !== 'Нет') && <div className="absolute top-2 right-2"><BellIcon className="w-3 h-3 text-brand-text-secondary" /></div>}
+                            <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 hover:border-brand-primary transition-colors cursor-pointer relative" onClick={() => setDateTimePickerOpen(true)}>
+                                <p className="text-[10px] text-brand-text-secondary mb-1 flex items-center gap-1"><ClockIcon className="w-3 h-3"/> Срок</p>
+                                <p className="text-sm font-medium text-brand-primary truncate">{editedTask.deadline ? new Date(editedTask.deadline).toLocaleString('ru-RU', { hour12: timeFormat === '12h' }) : 'Установить'}</p>
                             </div>
 
                             {/* Priority */}
-                            <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 hover:bg-brand-surface-solid/50 transition-colors cursor-pointer" onClick={cyclePriority}>
-                                <p className="text-xs text-brand-text-secondary mb-1 flex items-center gap-1"><FlagIcon priority={Priority.NONE} className="w-3 h-3"/> Приоритет</p>
+                            <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 hover:border-brand-primary transition-colors cursor-pointer" onClick={cyclePriority}>
+                                <p className="text-[10px] text-brand-text-secondary mb-1 flex items-center gap-1"><FlagIcon priority={Priority.NONE} className="w-3 h-3"/> Приоритет</p>
                                 <div className="flex items-center gap-2"><FlagIcon priority={editedTask.priority} className="w-4 h-4" /><span className="text-sm font-medium text-brand-text-primary capitalize">{editedTask.priority}</span></div>
                             </div>
+                        </div>
 
-                             {/* Status */}
-                             <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 hover:bg-brand-surface-solid/50 transition-colors cursor-pointer" onClick={() => setEditedTask({...editedTask, completed: !editedTask.completed})}>
-                                <p className="text-xs text-brand-text-secondary mb-1">Статус</p>
-                                <p className={`text-sm font-medium ${editedTask.completed ? 'text-green-500' : 'text-yellow-500'}`}>{editedTask.completed ? 'Выполнено' : 'В процессе'}</p>
+                        {/* ATTACHMENTS SECTION */}
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider flex items-center gap-2"><PaperclipIcon className="w-4 h-4 text-brand-accent" /> Вложения</h3>
+                                {/* Add Button */}
+                                <button onClick={() => fileInputRef.current?.click()} className="text-xs text-brand-primary hover:underline flex items-center gap-1 font-medium bg-brand-surface/50 px-2 py-1 rounded border border-brand-gray-700 hover:border-brand-primary transition-colors">
+                                    <PlusIcon className="w-3 h-3"/> Добавить файл
+                                </button>
+                                <input type="file" ref={fileInputRef} onChange={handleFileAttachment} className="hidden" />
                             </div>
                             
-                             {/* Repeat (Display Only) */}
-                             <div className="bg-brand-surface p-3 rounded-xl border border-brand-gray-700 flex flex-col justify-center">
-                                <p className="text-xs text-brand-text-secondary mb-1 flex items-center gap-1"><RepeatIcon className="w-3 h-3"/> Повтор</p>
-                                <p className="text-sm font-medium text-brand-text-primary">{editedTask.repeat || 'Никогда'}</p>
-                            </div>
+                            {editedTask.attachments && editedTask.attachments.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-2">
+                                    {editedTask.attachments.map(att => (
+                                        <div key={att.id} className="flex items-center justify-between bg-brand-surface border border-brand-gray-700 px-3 py-2 rounded-xl group hover:border-brand-text-secondary transition-colors">
+                                            <a href={att.url} target="_blank" rel="noopener noreferrer" className="text-xs text-brand-text-primary hover:text-brand-primary truncate flex-grow flex items-center gap-2">
+                                                <PaperclipIcon className="w-3 h-3 text-brand-text-secondary"/> 
+                                                {att.name}
+                                            </a>
+                                            <button onClick={() => deleteAttachment(att.id)} className="text-brand-text-secondary hover:text-red-400 p-1"><CancelIcon className="w-3 h-3" /></button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <p className="text-xs text-brand-text-secondary/50 italic pl-1">Нет вложений</p>}
                         </div>
 
                         {/* Subtasks */}
                         <div>
-                            <h3 className="text-xs font-bold text-brand-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2"><ListCheckIcon className="w-4 h-4 text-brand-accent" /> Подзадачи</h3>
+                            <h3 className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider mb-3 flex items-center gap-2"><ListCheckIcon className="w-4 h-4 text-brand-accent" /> Подзадачи</h3>
                             <div className="space-y-2 mb-3">
                                 {editedTask.subtasks.map(sub => (
                                     <div key={sub.id} className="flex items-center gap-3 bg-brand-surface p-2 rounded-lg border border-brand-gray-700">
@@ -211,43 +213,24 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                             </div>
                             <div className="flex gap-2">
                                 <input type="text" value={newSubtaskText} onChange={(e) => setNewSubtaskText(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && addSubtask()} placeholder="Добавить подзадачу..." className="flex-grow bg-brand-surface border border-brand-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-primary text-brand-text-primary placeholder-brand-text-secondary" />
-                                <button onClick={addSubtask} className="bg-brand-surface hover:bg-brand-surface-solid text-brand-text-primary p-2 rounded-lg border border-brand-gray-700"><PlusIcon className="w-5 h-5" /></button>
+                                <button onClick={addSubtask} className="bg-brand-surface hover:bg-brand-primary hover:text-white text-brand-text-primary p-2 rounded-lg border border-brand-gray-700"><PlusIcon className="w-5 h-5" /></button>
                             </div>
-                        </div>
-
-                         {/* Attachments */}
-                         <div>
-                            <label className="text-xs uppercase font-bold text-brand-text-secondary flex items-center gap-1.5 mb-2"><PaperclipIcon className="w-4 h-4 text-brand-accent" /> Вложения</label>
-                            <div className="flex gap-2 mb-2 overflow-x-auto pb-2 no-scrollbar">
-                                <button onClick={() => alert('Запрос доступа к камере.')} className="flex-shrink-0 flex items-center gap-1 text-xs bg-brand-surface hover:bg-brand-surface-solid border border-brand-gray-700 text-brand-text-primary px-3 py-2 rounded-lg transition-all"><CameraIcon className="w-4 h-4" /> Фото</button>
-                                <button onClick={() => alert('Запрос доступа к микрофону.')} className="flex-shrink-0 flex items-center gap-1 text-xs bg-brand-surface hover:bg-brand-surface-solid border border-brand-gray-700 text-brand-text-primary px-3 py-2 rounded-lg transition-all"><MicrophoneIcon className="w-4 h-4" /> Аудио</button>
-                                <button onClick={() => fileInputRef.current?.click()} className="flex-shrink-0 flex items-center gap-1 text-xs bg-brand-surface hover:bg-brand-surface-solid border border-brand-gray-700 text-brand-text-primary px-3 py-2 rounded-lg transition-all"><PaperclipIcon className="w-4 h-4" /> Файл</button>
-                                <input type="file" ref={fileInputRef} onChange={handleFileAttachment} className="hidden" />
-                            </div>
-                            <ul className="space-y-1">
-                                {(editedTask.attachments || []).map(att => (
-                                    <li key={att.id} className="text-xs flex items-center justify-between bg-brand-surface p-2 rounded-lg border border-brand-gray-700">
-                                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="truncate hover:underline text-blue-400">{att.name}</a>
-                                        <button onClick={() => deleteAttachment(att.id)}><CancelIcon className="w-3.5 h-3.5 text-brand-text-secondary hover:text-red-400"/></button>
-                                    </li>
-                                ))}
-                            </ul>
                         </div>
 
                         {/* Notes */}
                         <div>
-                            <h3 className="text-xs font-bold text-brand-text-secondary uppercase tracking-wider mb-2 flex items-center gap-2"><NoteIcon className="w-4 h-4 text-brand-accent" /> Заметки</h3>
+                            <h3 className="text-[10px] font-bold text-brand-text-secondary uppercase tracking-wider mb-2 flex items-center gap-2"><NoteIcon className="w-4 h-4 text-brand-accent" /> Заметки</h3>
                             <textarea value={editedTask.notes || ''} onChange={(e) => setEditedTask({...editedTask, notes: e.target.value})} placeholder="Добавьте детали здесь..." className="w-full h-24 bg-brand-surface border border-brand-gray-700 rounded-xl px-4 py-3 text-sm text-brand-text-primary focus:outline-none focus:border-brand-primary resize-none placeholder-brand-text-secondary"></textarea>
                         </div>
                     </div>
 
                     {/* Footer */}
-                    <div className="flex flex-col bg-brand-surface-solid/10 border-t border-brand-gray-700">
+                    <div className="flex flex-col bg-brand-surface border-t border-brand-gray-700">
                         <div className="p-4 flex justify-between items-center">
                             {onDelete && (
                                 <button 
                                     onClick={handleDeleteClick} 
-                                    className={`text-sm font-medium flex items-center gap-1 transition-all duration-300 px-4 py-2 rounded-lg ${isDeleting ? 'bg-red-600 text-white shadow-lg scale-105' : 'text-red-400 hover:text-red-300 hover:bg-brand-surface-solid/20'}`}
+                                    className={`text-sm font-medium flex items-center gap-1 transition-all duration-300 px-4 py-2 rounded-lg ${isDeleting ? 'bg-red-600 text-white shadow-lg scale-105' : 'text-red-400 hover:text-red-300 hover:bg-brand-gray-800'}`}
                                 >
                                     <TrashIcon className="w-4 h-4" /> 
                                     {isDeleting ? "Подтвердить?" : "Удалить"}
@@ -256,11 +239,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                             <button onClick={handleSave} className="bg-brand-primary hover:bg-blue-600 text-white px-8 py-2.5 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-transform active:scale-95"><SaveIcon className="w-5 h-5" /> Сохранить</button>
                         </div>
                         
-                        {/* Locate Button */}
+                        {/* Find in list button */}
                         {onLocate && (
                             <div className="pb-3 px-4 flex justify-center">
-                                <button onClick={() => { onClose(); onLocate(editedTask.id); }} className="text-xs text-brand-text-secondary hover:text-brand-accent flex items-center gap-1.5 transition-colors py-1 px-2 rounded hover:bg-brand-surface">
-                                    <SearchIcon className="w-3.5 h-3.5" />
+                                <button onClick={() => { onClose(); onLocate(editedTask.id); }} className="text-[10px] uppercase font-bold tracking-wider text-brand-text-secondary hover:text-brand-accent flex items-center gap-1.5 transition-colors py-1 px-2 rounded hover:bg-brand-surface">
+                                    <SearchIcon className="w-3 h-3" />
                                     Найти в списке
                                 </button>
                             </div>
@@ -277,8 +260,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                     setDateTimePickerOpen(false); 
                 }} 
                 initialValue={editedTask.deadline} 
-                initialReminder={editedTask.reminder}
-                initialRepeat={editedTask.repeat}
                 timeFormat={timeFormat}
             />
         </>
