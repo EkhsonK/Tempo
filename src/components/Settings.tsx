@@ -189,7 +189,7 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
             {/* DEVELOPER CARD */}
             <div className="glass-panel p-6 rounded-3xl flex flex-col items-center text-center border border-brand-primary/20 shadow-glow">
                 <h4 className="text-sm uppercase tracking-widest text-brand-text-secondary mb-2">Разработано</h4>
-                <a href="https://github.com/EkhsonK/Tempo-Task-Manager" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
+                <a href="https://github.com/EkhsonK/Tempo" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
                     <span className="text-3xl font-extrabold text-brand-primary">EkhsonK</span>
                     <GitHubIcon className="w-6 h-6 text-brand-text-primary group-hover:text-brand-primary transition-colors"/>
                 </a>
