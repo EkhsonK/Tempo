@@ -14,11 +14,25 @@ def create_app():
     
     # Config
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    db_path = os.path.join(BASE_DIR, '../todo.db')
-    upload_folder = os.path.join(BASE_DIR, '../uploads')
     
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+    # [UPDATE] Database Configuration Logic
+    # Check for DATABASE_URL environment variable (provided by Render)
+    db_url = os.environ.get('DATABASE_URL')
+    
+    if db_url:
+        # Production (Render PostgreSQL)
+        # Fix for older SQLAlchemy versions expecting 'postgresql://' instead of 'postgres://'
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    else:
+        # Local Development (SQLite)
+        db_path = os.path.join(BASE_DIR, '../todo.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    upload_folder = os.path.join(BASE_DIR, '../uploads')
     app.config['UPLOAD_FOLDER'] = upload_folder
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 
