@@ -5,6 +5,7 @@ import { ListCheckIcon, TasksIcon, ChatIcon, SettingsIcon, UserCircleIcon, Calen
 interface NavigationProps {
     activeTab: ActiveTab;
     setActiveTab: (tab: ActiveTab) => void;
+    onRefresh?: () => void; // Функция обновления данных
 }
 
 const NavItem: React.FC<{
@@ -35,7 +36,7 @@ const NavItem: React.FC<{
     );
 };
 
-const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
+const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab, onRefresh }) => {
     const navItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
         { id: 'tasks', label: 'Задачи', icon: <TasksIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
         { id: 'chat', label: 'Чат', icon: <ChatIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
@@ -43,6 +44,17 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
         { id: 'me', label: 'Я', icon: <UserCircleIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
         { id: 'settings', label: 'Настройки', icon: <SettingsIcon className="w-6 h-6 lg:w-7 lg:h-7" /> },
     ];
+
+    const handleTabClick = (id: ActiveTab) => {
+        // Логика обновления:
+        // 1. Если мы уже на вкладке 'tasks' и кликаем по ней снова -> вызываем onRefresh
+        if (id === activeTab && id === 'tasks' && onRefresh) {
+            onRefresh();
+        } else {
+            // 2. Иначе просто переключаем вкладку (App.tsx сам обновит данные через useEffect)
+            setActiveTab(id);
+        }
+    };
 
     return (
         <>
@@ -54,7 +66,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                         id={item.id}
                         icon={item.icon}
                         isActive={activeTab === item.id}
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => handleTabClick(item.id)}
                         title={item.label}
                     />
                 ))}
@@ -76,7 +88,7 @@ const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
                             id={item.id}
                             icon={item.icon}
                             isActive={activeTab === item.id}
-                            onClick={() => setActiveTab(item.id)}
+                            onClick={() => handleTabClick(item.id)}
                             title={item.label}
                         />
                     ))}
