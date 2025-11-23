@@ -186,17 +186,19 @@ const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTim
                 </div>
             </div>
 
-            {/* DEVELOPER CARD */}
-            <div className="glass-panel p-6 rounded-3xl flex flex-col items-center text-center border border-brand-primary/20 shadow-glow">
-                <h4 className="text-sm uppercase tracking-widest text-brand-text-secondary mb-2">Разработано</h4>
-                <a href="https://github.com/EkhsonK/Tempo" target="_blank" rel="noreferrer" className="group flex items-center gap-3 transition-transform hover:scale-105">
-                    <span className="text-3xl font-extrabold text-brand-primary">EkhsonK</span>
-                    <GitHubIcon className="w-6 h-6 text-brand-text-primary group-hover:text-brand-primary transition-colors"/>
+            {/* COMPACT DEVELOPER CARD */}
+            <div className="flex justify-center pb-6">
+                <a 
+                    href="https://github.com/EkhsonK/Tempo-Task-Manager" 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="inline-flex items-center gap-2 bg-brand-surface/50 hover:bg-brand-surface border border-brand-gray-700/50 rounded-full px-4 py-2 transition-all duration-300 hover:scale-105 group"
+                >
+                    <GitHubIcon className="w-4 h-4 text-brand-text-secondary group-hover:text-brand-primary transition-colors"/>
+                    <span className="text-xs font-bold text-brand-text-secondary group-hover:text-brand-primary">EkhsonK</span>
+                    <span className="w-1 h-1 rounded-full bg-brand-gray-700"></span>
+                    <span className="text-[10px] text-brand-text-secondary/70 font-medium">v3.0.0</span>
                 </a>
-                <div className="mt-3 flex items-center gap-2">
-                    <span className="px-2 py-1 bg-brand-accent/10 text-brand-accent text-[10px] font-bold rounded uppercase">Beta v3.0.0</span>
-                    <span className="text-xs text-brand-text-secondary">Powered by Gemini</span>
-                </div>
             </div>
 
             <WallpaperGalleryModal isOpen={isGalleryOpen} onClose={() => setIsGalleryOpen(false)} onSelect={(url) => { handleBackgroundChange(url); setIsGalleryOpen(false); }} currentBackground={document.body.style.backgroundImage} />
