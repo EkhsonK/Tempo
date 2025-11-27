@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { ToDoItem } from '../types';
 
-// Ссылка на твой сервер
+// Ссылка на твой сервер на Render
 const API_URL = 'https://tempo-backend-horp.onrender.com/api';
 
 const USER_ID_KEY = 'tempo_user_id';
@@ -41,6 +41,13 @@ const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Функция запроса с повторами и таймаутом
 const safeFetch = async (url: string, options?: RequestInit, retries = 2): Promise<any> => {
     try {
+        // Анти-кэш для GET запросов
+        let fetchUrl = url;
+        if (!options?.method || options.method === 'GET') {
+            const separator = url.includes('?') ? '&' : '?';
+            fetchUrl = `${url}${separator}t=${Date.now()}`;
+        }
+
         // 100 секунд таймаут для пробуждения Render
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), 100000);
@@ -55,9 +62,9 @@ const safeFetch = async (url: string, options?: RequestInit, retries = 2): Promi
             }
         };
         
-        console.log(`🌐 [REQ] ${options?.method || 'GET'} ${url}`);
+        console.log(`🌐 [REQ] ${options?.method || 'GET'} ${fetchUrl}`);
         
-        const response = await fetch(url, finalOptions);
+        const response = await fetch(fetchUrl, finalOptions);
         clearTimeout(id);
 
         if (!response.ok) {

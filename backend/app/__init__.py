@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import CORS
 from .extensions import db
 # Импортируем модели, чтобы они точно создались в БД
@@ -9,8 +9,9 @@ import os
 def create_app():
     app = Flask(__name__)
     
-    # [FIX] ГЛАВНОЕ ИСПРАВЛЕНИЕ ДЛЯ ANDROID
-    # support_credentials=False позволяет использовать origins="*" без блокировок браузера/webview
+    # [FIX] ГЛАВНОЕ ИСПРАВЛЕНИЕ СИНХРОНИЗАЦИИ
+    # support_credentials=False позволяет использовать origins="*" (доступ отовсюду)
+    # Это критически важно для работы мобильного приложения без ошибок сети.
     CORS(app, resources={r"/api/*": {"origins": "*"}}, 
          support_credentials=False, 
          allow_headers=["Content-Type", "X-User-Id", "Authorization"],
@@ -19,7 +20,7 @@ def create_app():
     # Config
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     
-    # База данных (PostgreSQL для Render, SQLite локально)
+    # База данных
     db_url = os.environ.get('DATABASE_URL')
     
     if db_url:
