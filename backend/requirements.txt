@@ -5,3 +5,6 @@ sqlalchemy
 werkzeug
 gunicorn
 psycopg2-binary
+requests
+huggingface_hub
+Pillow

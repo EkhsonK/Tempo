@@ -15,7 +15,7 @@ export interface Attachment {
     id: number;
     name: string;
     type: 'image' | 'audio' | 'file';
-    url: string; // For display, e.g., data URL or object URL
+    url: string; 
 }
 
 export interface ToDoItem {
@@ -55,10 +55,17 @@ export type ActiveTab = 'tasks' | 'chat' | 'calendar' | 'me' | 'settings';
 export type Theme = 'light' | 'dark' | 'midnight' | 'forest';
 export type TimeFormat = '12h' | '24h';
 
+// [FIX] Ensure this is exported
+export type AIRole = 'concise' | 'detailed';
+
+// [FIX] Ensure this is exported for AI commands
+export type TaskUpdateAction = 'ADD_SUBTASK' | 'SET_PRIORITY' | 'SET_STATUS' | 'ADD_NOTE' | 'SET_TITLE';
+
 export interface AppBackup {
     todos: ToDoItem[];
     categories: string[];
     theme: Theme;
+    aiRole?: AIRole;
     taskChatHistories: { [key: number]: ChatMessage[] };
 }
 
@@ -69,10 +76,13 @@ export interface GroundingChunk {
     };
 }
 
-// Removed: export type AspectRatio = "1:1" | "16:9" | "9:16" | "4:3" | "3:4";
-
 export interface ActivityLogEntry {
     id: number;
     message: string;
     timestamp: string;
 }
+
+export type SyncAction = 
+    | { type: 'ADD', payload: ToDoItem }
+    | { type: 'UPDATE', payload: { id: number, updates: Partial<ToDoItem> } }
+    | { type: 'DELETE', payload: { id: number } };

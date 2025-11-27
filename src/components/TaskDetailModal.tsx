@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ToDoItem, Priority, SubTask, Attachment, TimeFormat } from '../types';
-import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, CameraIcon, MicrophoneIcon, BellIcon, RepeatIcon, SearchIcon } from './IconComponents';
+import { FlagIcon, ClockIcon, NoteIcon, CancelIcon, ListCheckIcon, SaveIcon, TrashIcon, PlusIcon, PaperclipIcon, SearchIcon } from './IconComponents';
 import DateTimePickerModal from './DateTimePickerModal';
+import { api } from '../services/api'; // [FIX] Import API service
 
 interface TaskDetailModalProps {
     task: ToDoItem | null;
@@ -12,12 +13,6 @@ interface TaskDetailModalProps {
     timeFormat?: TimeFormat;
     categories: string[]; 
 }
-
-const CheckIcon: React.FC<{ className?: string }> = ({ className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
-        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-    </svg>
-);
 
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpdate, onDelete, onLocate, timeFormat = '12h', categories }) => {
     const [editedTask, setEditedTask] = useState<ToDoItem | null>(null);
@@ -88,21 +83,31 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
         setEditedTask({ ...editedTask, priority: levels[(idx + 1) % levels.length] });
     };
 
+    // [FIX] Updated File Upload Logic using centralized API
     const handleFileAttachment = async (event: React.ChangeEvent<HTMLInputElement>) => {
         if (!event.target.files || event.target.files.length === 0) return;
         const file = event.target.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
+        
+        // Frontend Size Check (100MB warning)
+        if (file.size > 100 * 1024 * 1024) {
+            alert("Файл слишком большой (макс. 100 МБ).");
+            return;
+        }
 
         try {
-            const response = await fetch('http://127.0.0.1:5000/api/upload', { method: 'POST', body: formData });
-            if (!response.ok) throw new Error('Upload failed');
-            const data = await response.json();
-            const newAttachment: Attachment = { id: Date.now(), name: data.name, type: file.type.startsWith('image/') ? 'image' : 'file', url: data.url };
+            // Call the shared API service (handles base URL correctly)
+            const data = await api.uploadFile(file);
+            
+            const newAttachment: Attachment = { 
+                id: Date.now(), 
+                name: data.name, 
+                type: file.type.startsWith('image/') ? 'image' : 'file', 
+                url: data.url 
+            };
             setEditedTask({ ...editedTask, attachments: [...(editedTask.attachments || []), newAttachment] });
         } catch (error) {
             console.error("Upload error:", error);
-            alert("Не удалось загрузить файл.");
+            alert("Не удалось загрузить файл. Проверьте соединение или размер файла.");
         }
         event.target.value = ''; 
     };
@@ -133,7 +138,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose, onUpda
                     {/* Content */}
                     <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-grow bg-brand-background/50">
                         
-                        {/* UPDATED CATEGORY CHIPS (Matches Add Task with DOTS) */}
+                        {/* Category Chips */}
                         <div>
                             <p className="text-[10px] text-brand-text-secondary mb-2 font-bold uppercase tracking-wider">Категория</p>
                             <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
