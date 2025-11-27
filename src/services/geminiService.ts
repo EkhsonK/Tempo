@@ -1,6 +1,6 @@
 import { ChatMessage, GroundingChunk, ToDoItem, MessageAuthor, AIRole } from '../types';
 
-// Use your Render URL (or localhost for testing)
+// Points to your Render backend
 const API_URL = 'https://tempo-backend-horp.onrender.com/api/ai'; 
 
 export async function* streamTaskChat(
@@ -11,7 +11,7 @@ export async function* streamTaskChat(
     role: AIRole = 'detailed'
 ) {
     try {
-        // 1. Prepare Context (Keep this logic on frontend for flexibility)
+        // 1. Build Task Context
         let taskContext = "Задача не выбрана.";
         if (activeTask) {
             const subtasksList = activeTask.subtasks && activeTask.subtasks.length > 0
@@ -20,53 +20,53 @@ export async function* streamTaskChat(
             const notes = activeTask.notes || "Нет заметок";
 
             taskContext = `
-            ОБЪЕКТ ЗАДАЧИ:
-            - Название: "${activeTask.text}"
-            - Приоритет: ${activeTask.priority}
-            - Статус: ${activeTask.completed ? 'DONE' : 'PENDING'}
-            - Заметки: "${notes}"
-            - Подзадачи:\n${subtasksList}
+            CURRENT TASK CONTEXT:
+            - Title: "${activeTask.text}"
+            - Priority: ${activeTask.priority}
+            - Status: ${activeTask.completed ? 'DONE' : 'PENDING'}
+            - Notes: "${notes}"
+            - Subtasks:\n${subtasksList}
             `;
         }
 
-        // 2. Settings
+        // 2. Configure Role/Personality
         let roleInstruction = "";
         let maxTokens = 1000;
         let temperature = 0.6;
 
         if (role === 'concise') {
-            maxTokens = 400; 
-            temperature = 0.4;
-            roleInstruction = "Отвечай четко, емко, без воды. Максимум 3-4 предложения. Сразу предлагай решение.";
+            maxTokens = 300; 
+            temperature = 0.3; // Lower creativity for precision
+            roleInstruction = "You are a concise, direct assistant. Give short answers (1-2 sentences). Focus only on the immediate solution. Do not chat casually.";
         } else {
             maxTokens = 1500;
-            temperature = 0.7;
-            roleInstruction = "Отвечай подробно, рассуждай, предлагай планы действий. НО! Не забывай в конце ответа выполнять технические команды, если это нужно.";
+            temperature = 0.7; // Higher creativity for discussion
+            roleInstruction = "You are a detailed, helpful assistant. Explain your reasoning, offer step-by-step plans, and be encouraging. You can chat casually if appropriate.";
         }
 
+        // 3. System Prompt (Optimized for Llama 3)
+        // We explicitly tell it NOT to output the protocol text.
         const systemPrompt = `
-        Ты — ИИ-ассистент в Task Manager.
-        Язык общения: РУССКИЙ.
-        Стиль: ${roleInstruction}
-        
-        ТВОЯ ЦЕЛЬ: Помогать пользователю и УПРАВЛЯТЬ записью задачи.
+        ${roleInstruction}
+        Language: RUSSIAN (Always reply in Russian).
         
         ${taskContext}
 
-        === ПРОТОКОЛ КОМАНД (СТРОГО ОБЯЗАТЕЛЕН) ===
-        Ты имеешь "руки" для изменения задачи. Если пользователь просит (или если это логично вытекает из разговора), ты ОБЯЗАН добавить команду в САМЫЙ КОНЕЦ ответа с новой строки.
+        === SYSTEM INSTRUCTIONS (HIDDEN) ===
+        1. You have access to tools to modify the task.
+        2. NEVER explain or output the "COMMAND PROTOCOL" syntax to the user. It is for your internal use only.
+        3. Only use a command if the user explicitly asks to change the task (e.g., "Rename this", "Mark as done").
+        4. If you use a command, place it on a new line at the very end of your message.
 
-        Синтаксис:
-        |||SET_TITLE:Новое название|||
-        |||ADD_SUBTASK:Текст подзадачи|||
-        |||SET_STATUS:completed||| (или pending)
+        === COMMAND PROTOCOL ===
+        |||SET_TITLE:New Title|||
+        |||ADD_SUBTASK:Subtask text|||
+        |||SET_STATUS:completed||| (or pending)
         |||SET_PRIORITY:high||| (medium, low)
-        |||ADD_NOTE:Текст заметки|||
-
-        ВАЖНО: Команды пишутся в том же сообщении, но в конце.
+        |||ADD_NOTE:Note text|||
         `;
 
-        // 3. Build Messages Array
+        // 4. Prepare Messages for Backend
         const messages = [
             { role: "system", content: systemPrompt },
             ...history.map(msg => ({
@@ -76,7 +76,7 @@ export async function* streamTaskChat(
             { role: "user", content: newMessage }
         ];
 
-        // 4. Send to Backend (Secure Proxy)
+        // 5. Send to Backend
         const response = await fetch(`${API_URL}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -100,11 +100,23 @@ export async function* streamTaskChat(
 
     } catch (error: any) {
         console.error("AI Service Error:", error);
-        yield `⚠️ Ошибка: ${error.message}`;
+        yield `⚠️ Error: ${error.message}`;
     }
 }
 
-export async function getGroundedResponse(query: string) {
-    // Placeholder for search via backend
-    return { text: "Поиск временно недоступен.", sources: [] };
+export async function getGroundedResponse(query: string): Promise<{ text: string; sources: GroundingChunk[] }> {
+    try {
+        const response = await fetch(`${API_URL}/search`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query })
+        });
+        
+        if (!response.ok) throw new Error("Search failed");
+        
+        return await response.json();
+    } catch (error) {
+        console.error("AI Search Error:", error);
+        return { text: "Поиск временно недоступен.", sources: [] };
+    }
 }

@@ -6,7 +6,7 @@ import Me from './components/Me';
 import Navigation from './components/Navigation';
 import CalendarView from './components/CalendarView';
 import Auth from './components/Auth';
-import { ActiveTab, ToDoItem, Priority, AppBackup, Theme, TimeFormat } from './types';
+import { ActiveTab, ToDoItem, Priority, AppBackup, Theme, TimeFormat, SubTask, TaskUpdateAction } from './types';
 import { api, setApiUserId } from './services/api';
 
 const App: React.FC = () => {
@@ -23,26 +23,65 @@ const App: React.FC = () => {
     const [timeFormat, setTimeFormat] = useState<TimeFormat>(() => (localStorage.getItem('timeFormat') as TimeFormat) || '12h');
     const [customBackground, setCustomBackground] = useState<string | null>(() => localStorage.getItem('customBackground') || null);
 
-    const handleUserLogin = (id: number, name: string) => { localStorage.setItem('tempo_auth_token', 'true'); localStorage.setItem('tempo_username', name); localStorage.removeItem('tempo_is_guest'); setUserId(id); setUsername(name); setApiUserId(id); setIsAuthenticated(true); setActiveTab('tasks'); setIsDataLoaded(false); };
+    const handleUserLogin = (id: number, name: string) => { 
+        localStorage.setItem('tempo_auth_token', 'true'); 
+        localStorage.setItem('tempo_username', name); 
+        localStorage.setItem('tempo_user_id', id.toString()); 
+        localStorage.removeItem('tempo_is_guest'); 
+        setUserId(id); 
+        setUsername(name); 
+        setApiUserId(id); 
+        setIsAuthenticated(true); 
+        setActiveTab('tasks'); 
+        setIsDataLoaded(false); 
+    };
+
     const handleGuestLogin = () => { localStorage.setItem('tempo_is_guest', 'true'); localStorage.removeItem('tempo_auth_token'); localStorage.removeItem('tempo_username'); setUserId(null); setUsername(null); setApiUserId(null); setIsAuthenticated(true); setActiveTab('tasks'); setIsDataLoaded(false); };
     const handleLogout = () => { localStorage.clear(); setIsAuthenticated(false); setUserId(null); setUsername(null); setApiUserId(null); setTodos([]); setCategories([]); setActiveTab('tasks'); setIsDataLoaded(false); };
 
     useEffect(() => { setApiUserId(userId); }, [userId]);
 
-    // [UPDATED] Централизованная функция загрузки данных
+    // [CENTRALIZED FETCH FUNCTION]
     const fetchData = useCallback(async () => {
         if (userId) {
             try {
-                setApiUserId(userId); await api.initDB(); 
-                const [fetchedTodos, fetchedCategories, userSettings] = await Promise.all([api.getTodos(), api.getCategories(), api.getUserSettings().catch(() => null)]);
+                setApiUserId(userId); 
+                
+                const [fetchedTodos, fetchedCategories, userSettings] = await Promise.all([
+                    api.getTodos(), 
+                    api.getCategories(), 
+                    api.getUserSettings().catch(() => null)
+                ]);
+
                 if (userSettings) {
                     if (userSettings.theme) { setTheme(userSettings.theme); localStorage.setItem('theme', userSettings.theme); }
                     if (userSettings.time_format) { setTimeFormat(userSettings.time_format as TimeFormat); localStorage.setItem('timeFormat', userSettings.time_format); }
                     if (userSettings.background_url !== undefined) { setCustomBackground(userSettings.background_url); if(userSettings.background_url) localStorage.setItem('customBackground', userSettings.background_url); else localStorage.removeItem('customBackground'); }
                 }
-                setTodos(fetchedTodos.map((t: ToDoItem) => ({ ...t, priority: t.priority || Priority.NONE })));
-                setCategories(fetchedCategories.length > 0 ? fetchedCategories : ["Общее", "Работа", "Личное"]);
-            } catch (e) { console.warn("Fetch error", e); } finally { setIsDataLoaded(true); }
+                
+                // Process fetched todos to ensure structure consistency
+                const processedTodos = fetchedTodos.map((t: ToDoItem) => ({ 
+                    ...t, 
+                    priority: t.priority || Priority.NONE,
+                    attachments: t.attachments || [] // CRITICAL: Ensure attachments is never undefined
+                }));
+
+                // Optimize state updates to avoid flicker
+                setTodos(prev => {
+                    if (prev.length === processedTodos.length && JSON.stringify(prev) === JSON.stringify(processedTodos)) return prev;
+                    return processedTodos;
+                });
+
+                setCategories(prev => {
+                    if (prev.length === fetchedCategories.length && JSON.stringify(prev) === JSON.stringify(fetchedCategories)) return prev;
+                    return fetchedCategories.length > 0 ? fetchedCategories : ["Общее", "Работа", "Личное"];
+                });
+
+            } catch (e) { 
+                console.warn("Fetch error", e); 
+            } finally { 
+                setIsDataLoaded(true); 
+            }
         } else if (isAuthenticated) {
             setTodos(JSON.parse(localStorage.getItem('guest_todos') || '[]'));
             setCategories(JSON.parse(localStorage.getItem('guest_categories') || '["Общее", "Работа", "Личное"]'));
@@ -50,18 +89,84 @@ const App: React.FC = () => {
         }
     }, [isAuthenticated, userId]);
 
-    // Первичная загрузка
+    // [INIT] Initial Load
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // [NEW] Обновление при переходе на вкладку задач
+    // [SYNC] Auto-Sync Polling (Every 10s)
+    useEffect(() => {
+        if (!userId) return; 
+
+        const interval = setInterval(() => {
+            fetchData();
+        }, 10000); 
+
+        return () => clearInterval(interval);
+    }, [userId, fetchData]);
+
+    // [UX] Refresh on Tab Change
     useEffect(() => {
         if (activeTab === 'tasks') {
             fetchData();
         }
     }, [activeTab, fetchData]);
 
+    // [CRUD] Centralized Add Handler
+    const handleAddTodo = async (task: any) => {
+        const tempId = Date.now();
+        const newTodo: ToDoItem = { 
+            ...task, 
+            id: tempId, 
+            completed: false, 
+            subtasks: [], 
+            attachments: task.attachments || [], // Ensure initialized
+            lastModified: new Date().toISOString() 
+        };
+        
+        // Optimistic UI Update
+        setTodos(prev => [...prev, newTodo]);
+
+        if (userId) {
+            try { 
+                await api.addTodo(newTodo); 
+                fetchData(); // Sync to get real server ID
+            } catch (e) { console.error("Add failed", e); }
+        }
+    };
+
+    const handleUpdateTodo = async (id: number, updates: Partial<ToDoItem>) => {
+        setTodos(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+        if (userId) {
+            try { await api.updateTodo(id, updates); } catch (e) { console.error("Update failed", e); }
+        }
+    };
+
+    const handleDeleteTodo = async (id: number) => {
+        setTodos(prev => prev.filter(t => t.id !== id));
+        if (userId) {
+            try { await api.deleteTodo(id); } catch (e) { console.error("Delete failed", e); }
+        }
+    };
+
+    const handleAiTaskUpdate = (taskId: number, action: TaskUpdateAction, value: string) => {
+        const task = todos.find(t => t.id === taskId);
+        if (!task) return;
+        let updates: Partial<ToDoItem> = {};
+        switch (action) {
+            case 'ADD_SUBTASK':
+                const newSub: SubTask = { id: Date.now(), text: value, completed: false };
+                updates = { subtasks: [...(task.subtasks || []), newSub] };
+                break;
+            case 'SET_STATUS': updates = { completed: value.toLowerCase() === 'completed' }; break;
+            case 'SET_PRIORITY': if(['high','medium','low'].includes(value)) updates = { priority: value as Priority }; break;
+            case 'ADD_NOTE': updates = { notes: value }; break;
+            case 'SET_TITLE': updates = { text: value }; break;
+        }
+        handleUpdateTodo(taskId, updates);
+    };
+
+    // [EFFECTS] Persistence
     useEffect(() => { if (userId && isDataLoaded) { const t = setTimeout(() => api.updateUserSettings({ theme, time_format: timeFormat, background_url: customBackground }).catch(console.error), 1000); return () => clearTimeout(t); } }, [theme, timeFormat, customBackground, userId, isDataLoaded]);
     useEffect(() => { if (!userId && isAuthenticated) localStorage.setItem('guest_todos', JSON.stringify(todos)); }, [todos, userId, isAuthenticated]);
     useEffect(() => { if (!userId && isAuthenticated) localStorage.setItem('guest_categories', JSON.stringify(categories)); }, [categories, userId, isAuthenticated]);
@@ -76,7 +181,6 @@ const App: React.FC = () => {
     
     useEffect(() => { localStorage.setItem('timeFormat', timeFormat); }, [timeFormat]);
 
-    // Dynamic Transparency Logic
     useEffect(() => {
         const root = document.documentElement;
         if (customBackground) {
@@ -90,18 +194,32 @@ const App: React.FC = () => {
         }
     }, [customBackground]);
 
-    const handleRestoreBackup = (backup: AppBackup) => { if (!backup.todos) return; setTodos(backup.todos); setCategories(backup.categories); setTheme(backup.theme); localStorage.setItem('taskChatHistories', JSON.stringify(backup.taskChatHistories)); alert("Restored."); };
+    const handleRestoreBackup = (backup: AppBackup) => { if (!backup.todos) return; setTodos(backup.todos); setCategories(backup.categories); setTheme(backup.theme); alert("Restored."); };
     const handleLocateTask = (taskId: number) => { setActiveTab('tasks'); setScrollToTaskId(taskId); setTimeout(() => setScrollToTaskId(null), 1000); };
 
     if (!isAuthenticated) return <Auth onGuestLogin={handleGuestLogin} onUserLogin={handleUserLogin} />;
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'chat': return <Chatbot selectedTaskId={selectedTaskForChat} tasks={todos} />;
+            case 'chat': return <Chatbot selectedTaskId={selectedTaskForChat} tasks={todos} onTaskUpdate={handleAiTaskUpdate} />;
             case 'calendar': return <CalendarView todos={todos} setTodos={setTodos} onLocateTask={handleLocateTask} timeFormat={timeFormat} isGuest={!userId} categories={categories} />;
             case 'me': return <Me todos={todos} setTodos={setTodos} onLocateTask={handleLocateTask} timeFormat={timeFormat} username={username} isGuest={!userId} onLogout={handleLogout} categories={categories} />;
             case 'settings': return <Settings theme={theme} setTheme={setTheme} timeFormat={timeFormat} setTimeFormat={setTimeFormat} backupData={{ todos, categories, theme }} onRestore={handleRestoreBackup} setCustomBackground={setCustomBackground} categories={categories} setCategories={setCategories} todos={todos} setTodos={setTodos} onLogout={handleLogout} />;
-            case 'tasks': default: return <ToDoList todos={todos} setTodos={setTodos} categories={categories} setCategories={setCategories} setActiveTab={setActiveTab} setSelectedTaskForChat={setSelectedTaskForChat} scrollToTaskId={scrollToTaskId} timeFormat={timeFormat} isGuest={!userId} />;
+            case 'tasks': default: return <ToDoList 
+                todos={todos} 
+                setTodos={setTodos} 
+                categories={categories} 
+                setCategories={setCategories} 
+                setActiveTab={setActiveTab} 
+                setSelectedTaskForChat={setSelectedTaskForChat} 
+                scrollToTaskId={scrollToTaskId} 
+                timeFormat={timeFormat} 
+                isGuest={!userId} 
+                onRefresh={fetchData} 
+                onAddTodo={handleAddTodo}
+                onUpdateTodo={handleUpdateTodo}
+                onDeleteTodo={handleDeleteTodo}
+            />;
         }
     };
     
@@ -110,7 +228,6 @@ const App: React.FC = () => {
 
     return (
         <div className={appContainerClass}>
-            {/* Передаем fetchData как onRefresh */}
             <Navigation activeTab={activeTab} setActiveTab={setActiveTab} onRefresh={fetchData} />
             <div className="flex-1 flex flex-col w-full lg:pl-24 h-[100dvh]">
                 <main 

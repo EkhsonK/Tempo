@@ -1,9 +1,8 @@
 import React, { useState, useMemo, Dispatch, SetStateAction, useRef, useEffect } from 'react';
 import { ToDoItem, Priority, ActiveTab, TimeFormat } from '../types';
-import { PlusIcon, ClockIcon, MessageIcon, FlagIcon, SearchIcon, NoteIcon, ListCheckIcon, CancelIcon, PaperclipIcon } from './IconComponents';
+import { PlusIcon, ClockIcon, MessageIcon, FlagIcon, SearchIcon, NoteIcon, ListCheckIcon, CancelIcon, PaperclipIcon, SyncIcon } from './IconComponents';
 import AddTaskModal from './AddTaskModal';
 import TaskDetailModal from './TaskDetailModal';
-import { api } from '../services/api';
 
 const formatTimeRemaining = (deadline: string) => {
     const now = new Date();
@@ -47,7 +46,7 @@ const HighlightText = ({ text, query }: { text: string, query: string }) => {
 
 interface ToDoListProps {
     todos: ToDoItem[];
-    setTodos: Dispatch<SetStateAction<ToDoItem[]>>;
+    setTodos: Dispatch<SetStateAction<ToDoItem[]>>; // Keep for local optimistic updates if needed, but props are better
     categories: string[];
     setCategories: Dispatch<SetStateAction<string[]>>;
     setActiveTab: Dispatch<SetStateAction<ActiveTab>>;
@@ -55,9 +54,27 @@ interface ToDoListProps {
     scrollToTaskId?: number | null;
     timeFormat: TimeFormat;
     isGuest: boolean;
+    // [FIX] Added these props to delegate logic to App.tsx
+    onRefresh?: () => void;
+    onAddTodo: (task: Omit<ToDoItem, 'id' | 'lastModified' | 'completed' | 'subtasks' | 'notes' | 'attachments'>) => void;
+    onUpdateTodo: (id: number, updates: Partial<ToDoItem>) => void;
+    onDeleteTodo: (id: number) => void;
 }
 
-const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCategories, setActiveTab, setSelectedTaskForChat, scrollToTaskId, timeFormat, isGuest }) => {
+const ToDoList: React.FC<ToDoListProps> = ({ 
+    todos, 
+    categories, 
+    setActiveCategory: setCategories, // Assuming this maps to the setter
+    setActiveTab, 
+    setSelectedTaskForChat, 
+    scrollToTaskId, 
+    timeFormat, 
+    isGuest, 
+    onRefresh,
+    onAddTodo,
+    onUpdateTodo,
+    onDeleteTodo
+}) => {
     const [activeCategory, setActiveCategory] = useState('Все');
     const [collapsedSections, setCollapsedSections] = useState<{ past: boolean; today: boolean; future: boolean }>({
         past: false, today: false, future: false
@@ -70,7 +87,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
     
     const listEndRef = useRef<HTMLDivElement>(null);
 
-    // [NEW] Calculate Task Counts per Category
     const categoryCounts = useMemo(() => {
         const counts: { [key: string]: number } = { 'Все': todos.length };
         todos.forEach(todo => {
@@ -118,63 +134,22 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
         }
     }, [scrollToTaskId, todos, activeCategory]);
 
-    const updateTodo = async (id: number, updates: Partial<Omit<ToDoItem, 'id'>>) => {
-        const updatedTodo = { ...todos.find(t => t.id === id)!, ...updates, lastModified: new Date().toISOString() };
-        setTodos(todos.map(t => t.id === id ? updatedTodo : t));
-        
-        if (!isGuest) {
-            try {
-                await api.updateTodo(id, updates);
-            } catch (e) {
-                console.error("Failed to update todo on backend");
-            }
-        }
+    // [FIX] Use prop from App.tsx
+    const updateTodo = (id: number, updates: Partial<Omit<ToDoItem, 'id'>>) => {
+        onUpdateTodo(id, updates);
     };
 
-    const handleSaveNewTodo = async (taskData: Omit<ToDoItem, 'id' | 'lastModified' | 'completed' | 'subtasks' | 'notes' | 'attachments'>) => {
-        const tempId = Date.now(); 
-        const newTodo: ToDoItem = {
-            id: tempId,
-            ...taskData,
-            completed: false,
-            subtasks: [],
-            lastModified: new Date().toISOString(),
-            notes: '',
-            attachments: taskData.attachments || [],
-            reminder: taskData.reminder || 'Нет',
-            repeat: taskData.repeat || 'Никогда',
-        };
-        
-        setTodos(prevTodos => [...prevTodos, newTodo]);
-        setActiveCategory('Все');
+    // [FIX] Use prop from App.tsx (Fixes TS Error by delegation)
+    const handleSaveNewTodo = (taskData: Omit<ToDoItem, 'id' | 'lastModified' | 'completed' | 'subtasks' | 'notes' | 'attachments'>) => {
+        onAddTodo(taskData);
         setSearchQuery('');
-        
-        if (!isGuest) {
-            try {
-                const response = await api.addTodo(newTodo);
-                const savedTodo = response as ToDoItem;
-                if (savedTodo && savedTodo.id) {
-                    setTodos(prevTodos => prevTodos.map(t => t.id === tempId ? savedTodo : t));
-                }
-            } catch (e) {
-                console.error("Failed to add todo to backend", e);
-            }
-        }
-
         setTimeout(() => { if (listEndRef.current) listEndRef.current.scrollIntoView({ behavior: 'smooth' }); }, 100);
     };
     
-    const handleDeleteTodo = async (id: number) => {
-        setTodos(currentTodos => currentTodos.filter(t => t.id !== id));
+    // [FIX] Use prop from App.tsx
+    const handleDeleteTodo = (id: number) => {
+        onDeleteTodo(id);
         setSelectedTask(null);
-        
-        if (!isGuest) {
-            try {
-                await api.deleteTodo(id);
-            } catch (e) {
-                console.error("Failed to delete todo from backend");
-            }
-        }
     };
     
     const handlePriorityChange = (id: number, e: React.MouseEvent) => {
@@ -325,7 +300,6 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
                         </span>
                     )}
 
-                    {/* Attachment Indicator */}
                     {todo.attachments && todo.attachments.length > 0 && (
                         <span className="flex items-center gap-1 text-xs text-brand-text-secondary ml-1">
                             <PaperclipIcon className="w-3 h-3" />
@@ -369,28 +343,36 @@ const ToDoList: React.FC<ToDoListProps> = ({ todos, setTodos, categories, setCat
     return (
         <div className="flex flex-col gap-4 h-full relative">
             <div className="flex flex-col gap-4 p-1 pb-2">
-                <div className="relative w-full">
-                    <SearchIcon className="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2"/>
-                    <input 
-                        type="text" 
-                        placeholder="Поиск задач, заметок..." 
-                        value={searchQuery} 
-                        onChange={e => setSearchQuery(e.target.value)} 
-                        className="bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm w-full focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all placeholder-gray-500" 
-                    />
-                    {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
-                            <CancelIcon className="w-4 h-4" />
-                        </button>
-                    )}
+                <div className="relative w-full flex gap-2">
+                    <div className="relative flex-grow">
+                        <SearchIcon className="w-5 h-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2"/>
+                        <input 
+                            type="text" 
+                            placeholder="Поиск задач, заметок..." 
+                            value={searchQuery} 
+                            onChange={e => setSearchQuery(e.target.value)} 
+                            className="bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-3 text-sm w-full focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all placeholder-gray-500" 
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+                                <CancelIcon className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                    {/* Manual Refresh Button */}
+                    <button 
+                        onClick={onRefresh} 
+                        className="bg-black/20 border border-white/10 rounded-xl px-3 flex items-center justify-center hover:bg-brand-gray-700 transition-colors"
+                        title="Обновить"
+                    >
+                        <SyncIcon className="w-5 h-5 text-brand-text-secondary" />
+                    </button>
                 </div>
 
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 pt-1 px-1">
-                     {/* [UPDATED] "All" button with total count */}
                      <button onClick={() => setActiveCategory('Все')} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === 'Все' ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>
                         Все ({categoryCounts['Все']})
                      </button>
-                    {/* [UPDATED] Category buttons with specific counts */}
                     {categories.map(c => (
                         <button key={c} onClick={() => setActiveCategory(c)} className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 border ${activeCategory === c ? 'bg-brand-primary border-brand-primary text-white shadow-lg scale-105' : 'bg-transparent border-white/10 text-gray-400 hover:border-brand-primary hover:text-brand-primary'}`}>
                             {c} ({categoryCounts[c] || 0})
