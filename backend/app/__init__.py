@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from .extensions import db
-# Импортируем модели сразу, чтобы SQLAlchemy знала о них при создании таблиц
+# Импортируем модели, чтобы они точно создались в БД
 from .models import User, Todo, Category, SubTask, Attachment
 from .routes import auth, todos, categories, upload 
 import os
@@ -9,9 +9,8 @@ import os
 def create_app():
     app = Flask(__name__)
     
-    # [FIX] КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ CORS
-    # support_credentials=False ОБЯЗАТЕЛЬНО, если origins="*"
-    # Иначе Android WebView заблокирует запрос.
+    # [FIX] ГЛАВНОЕ ИСПРАВЛЕНИЕ ДЛЯ ANDROID
+    # support_credentials=False позволяет использовать origins="*" без блокировок браузера/webview
     CORS(app, resources={r"/api/*": {"origins": "*"}}, 
          support_credentials=False, 
          allow_headers=["Content-Type", "X-User-Id", "Authorization"],
@@ -20,21 +19,21 @@ def create_app():
     # Config
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     
-    # Database Logic
+    # База данных (PostgreSQL для Render, SQLite локально)
     db_url = os.environ.get('DATABASE_URL')
     
     if db_url:
-        # Fix for Render PostgreSQL internal URL format
+        # Render требует postgresql:// вместо postgres://
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     else:
-        # Local Development (SQLite)
         db_path = os.path.join(BASE_DIR, '../todo.db')
         app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    # Папка для загрузки файлов
     upload_folder = os.path.join(BASE_DIR, '../uploads')
     app.config['UPLOAD_FOLDER'] = upload_folder
     app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 
@@ -43,11 +42,15 @@ def create_app():
     
     db.init_app(app)
     
-    # Register Blueprints
+    # Регистрация маршрутов
     app.register_blueprint(auth.bp)
     app.register_blueprint(todos.bp)
     app.register_blueprint(categories.bp)
     app.register_blueprint(upload.bp)
+
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return jsonify({"status": "ok", "db": "connected" if db_url else "sqlite_local"})
 
     @app.route('/api/init', methods=['GET'])
     def init_db():
@@ -56,7 +59,7 @@ def create_app():
             db.create_all()
         return jsonify({"status": "Database initialized"})
     
-    # Auto-create tables
+    # Автоматическое создание таблиц при запуске
     with app.app_context():
         db.create_all()
         

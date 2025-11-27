@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 import { ToDoItem } from '../types';
 
-// Жесткая ссылка на сервер
+// Ссылка на твой сервер
 const API_URL = 'https://tempo-backend-horp.onrender.com/api';
 
 const USER_ID_KEY = 'tempo_user_id';
@@ -14,7 +14,7 @@ const getStoredUserId = (): number | null => {
 let currentUserId: number | null = getStoredUserId();
 
 export const setApiUserId = (id: number | null) => {
-    console.log(`[API] Установка ID пользователя: ${id}`);
+    console.log(`[API] Auth ID: ${id}`);
     currentUserId = id;
     if (id) {
         localStorage.setItem(USER_ID_KEY, id.toString());
@@ -35,16 +35,19 @@ const getHeaders = () => {
     return headers;
 };
 
+// Функция паузы
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Функция запроса с повторами и таймаутом
 const safeFetch = async (url: string, options?: RequestInit, retries = 2): Promise<any> => {
     try {
+        // 100 секунд таймаут для пробуждения Render
         const controller = new AbortController();
-        // 60 секунд таймаут (достаточно для пробуждения Render)
-        const id = setTimeout(() => controller.abort(), 60000);
+        const id = setTimeout(() => controller.abort(), 100000);
 
         const finalOptions = {
             ...options,
+            mode: 'cors' as RequestMode, // Явно включаем CORS
             signal: controller.signal,
             headers: {
                 ...getHeaders(),
@@ -52,38 +55,46 @@ const safeFetch = async (url: string, options?: RequestInit, retries = 2): Promi
             }
         };
         
-        console.log(`🌐 [API Request] ${options?.method || 'GET'} ${url}`);
+        console.log(`🌐 [REQ] ${options?.method || 'GET'} ${url}`);
+        
         const response = await fetch(url, finalOptions);
         clearTimeout(id);
 
         if (!response.ok) {
-             // Если вернулся HTML вместо JSON (ошибка 502/503 от Render), кидаем ошибку сети
+             // Если сервер вернул HTML (ошибка 502/503 от nginx/render), считаем это ошибкой сети
              const contentType = response.headers.get("content-type");
              if (contentType && contentType.indexOf("application/json") === -1) {
-                 throw new Error("Server is restarting or unavailable");
+                 throw new Error("Server unavailable (Sleeping or Deploying)");
              }
 
              const errorData = await response.json().catch(() => ({}));
-             throw new Error(errorData.error || `Server Error: ${response.status}`);
+             throw new Error(errorData.error || `HTTP Error: ${response.status}`);
         }
         
         return await response.json();
 
     } catch (error: any) {
-        // Если сеть упала, сервер спит или CORS ошибка - пробуем снова
-        if (retries > 0) {
-            console.warn(`⚠️ Ошибка API (${error.message}). Повтор через 3с...`);
+        // Если ошибка сети, таймаут или сервер спит — пробуем снова
+        const isNetworkError = error.name === 'AbortError' || 
+                               error.message.includes('Failed to fetch') || 
+                               error.message.includes('Server unavailable');
+
+        if (retries > 0 && isNetworkError) {
+            console.warn(`⚠️ Сбой сети (${error.message}). Повтор через 3 сек... Осталось попыток: ${retries}`);
             await wait(3000);
             return safeFetch(url, options, retries - 1);
         }
-        console.error("❌ API Failed Final:", error);
+        
+        console.error(`❌ API Error Final: ${url}`, error);
         throw error;
     }
 };
 
 export const api = {
-    initDB: () => safeFetch(`${API_URL}/init`),
+    // Проверка
+    ping: () => safeFetch(`${API_URL}/init`),
 
+    // Auth
     register: (username: string, password: string) => safeFetch(`${API_URL}/register`, {
         method: 'POST',
         body: JSON.stringify({ username, password })
@@ -94,6 +105,7 @@ export const api = {
         body: JSON.stringify({ username, password })
     }),
 
+    // User Settings
     getUserSettings: () => safeFetch(`${API_URL}/user`),
     
     updateUserSettings: (settings: any) => safeFetch(`${API_URL}/user`, {
@@ -101,6 +113,7 @@ export const api = {
         body: JSON.stringify(settings)
     }),
 
+    // Todos
     getTodos: (): Promise<ToDoItem[]> => safeFetch(`${API_URL}/todos`),
     
     addTodo: (todo: ToDoItem) => safeFetch(`${API_URL}/todos`, {
@@ -122,6 +135,7 @@ export const api = {
         method: 'DELETE'
     }),
 
+    // Categories
     getCategories: (): Promise<string[]> => safeFetch(`${API_URL}/categories`),
 
     addCategory: (name: string) => safeFetch(`${API_URL}/categories`, {
@@ -133,6 +147,7 @@ export const api = {
         method: 'DELETE'
     }),
 
+    // Upload
     uploadFile: async (file: File): Promise<{ url: string, name: string, type: string }> => {
         const formData = new FormData();
         formData.append('file', file);
