@@ -1,27 +1,30 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from .extensions import db
-# Force load models immediately
+# Импортируем модели сразу, чтобы SQLAlchemy знала о них при создании таблиц
 from .models import User, Todo, Category, SubTask, Attachment
-# Remove these imports from the top if they cause circular issues, 
-# but keeping them is usually fine if structured correctly.
 from .routes import auth, todos, categories, upload 
 import os
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    
+    # [FIX] КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ CORS
+    # support_credentials=False ОБЯЗАТЕЛЬНО, если origins="*"
+    # Иначе Android WebView заблокирует запрос.
+    CORS(app, resources={r"/api/*": {"origins": "*"}}, 
+         support_credentials=False, 
+         allow_headers=["Content-Type", "X-User-Id", "Authorization"],
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
     
     # Config
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))
     
-    # [UPDATE] Database Configuration Logic
-    # Check for DATABASE_URL environment variable (provided by Render)
+    # Database Logic
     db_url = os.environ.get('DATABASE_URL')
     
     if db_url:
-        # Production (Render PostgreSQL)
-        # Fix for older SQLAlchemy versions expecting 'postgresql://' instead of 'postgres://'
+        # Fix for Render PostgreSQL internal URL format
         if db_url.startswith("postgres://"):
             db_url = db_url.replace("postgres://", "postgresql://", 1)
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
@@ -34,7 +37,7 @@ def create_app():
     
     upload_folder = os.path.join(BASE_DIR, '../uploads')
     app.config['UPLOAD_FOLDER'] = upload_folder
-    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+    app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024 
 
     os.makedirs(upload_folder, exist_ok=True)
     
@@ -49,15 +52,12 @@ def create_app():
     @app.route('/api/init', methods=['GET'])
     def init_db():
         with app.app_context():
-            # [CRITICAL FIX] Import models here to ensure they are known to SQLAlchemy
             from . import models 
             db.create_all()
         return jsonify({"status": "Database initialized"})
     
-    # Also create tables on startup
+    # Auto-create tables
     with app.app_context():
-        # [CRITICAL FIX] Import models here too
-        from . import models 
         db.create_all()
         
     return app

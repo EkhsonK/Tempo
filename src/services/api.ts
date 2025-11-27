@@ -1,22 +1,20 @@
 /// <reference types="vite/client" />
 import { ToDoItem } from '../types';
 
-// [UPDATED] Dynamic URL logic
-// If on Vercel (production), use the Env Variable. If local, use localhost.
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
+// Жесткая ссылка на сервер
+const API_URL = 'https://tempo-backend-horp.onrender.com/api';
 
 const USER_ID_KEY = 'tempo_user_id';
 
-// Helper to get ID from storage directly if variable is lost
 const getStoredUserId = (): number | null => {
     const stored = localStorage.getItem(USER_ID_KEY);
     return stored ? parseInt(stored, 10) : null;
 };
 
-// Initialize currentUserId from storage immediately
 let currentUserId: number | null = getStoredUserId();
 
 export const setApiUserId = (id: number | null) => {
+    console.log(`[API] Установка ID пользователя: ${id}`);
     currentUserId = id;
     if (id) {
         localStorage.setItem(USER_ID_KEY, id.toString());
@@ -27,36 +25,58 @@ export const setApiUserId = (id: number | null) => {
 
 const getHeaders = () => {
     const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
     };
-    
-    // Always try to get the ID from the variable, fallback to storage
     const uid = currentUserId || getStoredUserId();
-    
     if (uid) {
         headers['X-User-Id'] = uid.toString();
     }
     return headers;
 };
 
-const safeFetch = async (url: string, options?: RequestInit) => {
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const safeFetch = async (url: string, options?: RequestInit, retries = 2): Promise<any> => {
     try {
+        const controller = new AbortController();
+        // 60 секунд таймаут (достаточно для пробуждения Render)
+        const id = setTimeout(() => controller.abort(), 60000);
+
         const finalOptions = {
             ...options,
+            signal: controller.signal,
             headers: {
                 ...getHeaders(),
                 ...options?.headers
             }
         };
         
+        console.log(`🌐 [API Request] ${options?.method || 'GET'} ${url}`);
         const response = await fetch(url, finalOptions);
+        clearTimeout(id);
+
         if (!response.ok) {
+             // Если вернулся HTML вместо JSON (ошибка 502/503 от Render), кидаем ошибку сети
+             const contentType = response.headers.get("content-type");
+             if (contentType && contentType.indexOf("application/json") === -1) {
+                 throw new Error("Server is restarting or unavailable");
+             }
+
              const errorData = await response.json().catch(() => ({}));
-             throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+             throw new Error(errorData.error || `Server Error: ${response.status}`);
         }
+        
         return await response.json();
-    } catch (error) {
-        console.error("API connection failed:", error);
+
+    } catch (error: any) {
+        // Если сеть упала, сервер спит или CORS ошибка - пробуем снова
+        if (retries > 0) {
+            console.warn(`⚠️ Ошибка API (${error.message}). Повтор через 3с...`);
+            await wait(3000);
+            return safeFetch(url, options, retries - 1);
+        }
+        console.error("❌ API Failed Final:", error);
         throw error;
     }
 };
@@ -64,7 +84,6 @@ const safeFetch = async (url: string, options?: RequestInit) => {
 export const api = {
     initDB: () => safeFetch(`${API_URL}/init`),
 
-    // Auth
     register: (username: string, password: string) => safeFetch(`${API_URL}/register`, {
         method: 'POST',
         body: JSON.stringify({ username, password })
@@ -75,19 +94,22 @@ export const api = {
         body: JSON.stringify({ username, password })
     }),
 
-    // User Settings
     getUserSettings: () => safeFetch(`${API_URL}/user`),
     
-    updateUserSettings: (settings: { theme?: string, time_format?: string, background_url?: string | null }) => safeFetch(`${API_URL}/user`, {
+    updateUserSettings: (settings: any) => safeFetch(`${API_URL}/user`, {
         method: 'PUT',
         body: JSON.stringify(settings)
     }),
 
-    // Todos
     getTodos: (): Promise<ToDoItem[]> => safeFetch(`${API_URL}/todos`),
     
     addTodo: (todo: ToDoItem) => safeFetch(`${API_URL}/todos`, {
         method: 'POST',
+        body: JSON.stringify(todo)
+    }),
+
+    saveTodo: (todo: ToDoItem) => safeFetch(`${API_URL}/todos/${todo.id}`, {
+        method: 'PUT',
         body: JSON.stringify(todo)
     }),
 
@@ -100,7 +122,6 @@ export const api = {
         method: 'DELETE'
     }),
 
-    // Categories
     getCategories: (): Promise<string[]> => safeFetch(`${API_URL}/categories`),
 
     addCategory: (name: string) => safeFetch(`${API_URL}/categories`, {
@@ -110,5 +131,23 @@ export const api = {
 
     deleteCategory: (name: string) => safeFetch(`${API_URL}/categories?name=${encodeURIComponent(name)}`, {
         method: 'DELETE'
-    })
+    }),
+
+    uploadFile: async (file: File): Promise<{ url: string, name: string, type: string }> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const headers: Record<string, string> = {};
+        const uid = currentUserId || getStoredUserId();
+        if (uid) headers['X-User-Id'] = uid.toString();
+
+        const response = await fetch(`${API_URL}/upload`, {
+            method: 'POST',
+            headers: headers, 
+            body: formData 
+        });
+        
+        if (!response.ok) throw new Error("Upload failed");
+        return await response.json();
+    }
 };
