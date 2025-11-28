@@ -1,6 +1,6 @@
 # Tempo Task Manager 🚀
 
-<img width="1024" height="339" alt="Баннер Tempo Task Manager" src="https://github.com/user-attachments/assets/d808db89-60b8-4cbb-8b59-06e6a59d784d" />
+![unnamed](https://github.com/user-attachments/assets/668d25a8-a25a-45ad-b68c-33fe9d32e140)
 
 Tempo — это умный менеджер задач на базе искусственного интеллекта, разработанный, чтобы помочь вам легко организовать свою жизнь. Созданный с использованием **React**, **TypeScript** и **Python (Flask)**, он использует возможности **Gemini AI** для помощи в декомпозиции задач, общения с вашими задачами и многого другого.
 
@@ -58,10 +58,9 @@ Tempo — это умный менеджер задач на базе искус
     Перейдите по адресу `http://localhost:3000` (или порту, указанному в вашем терминале для frontend).
 
 ## 📸 Скриншоты
+<img width="2479" height="1249" alt="изображение" src="https://github.com/user-attachments/assets/c98d1686-48a0-456b-86f7-ad2ba6cb1069" />
 
-<img width="1033" height="942" alt="Скриншот интерфейса Tempo" src="https://github.com/user-attachments/assets/098e7c70-7f50-4f8c-bb14-0b42700da2be" />
-
-<img width="528" height="166" alt="Скриншот деталей задачи" src="https://github.com/user-attachments/assets/0bc22167-0b02-40ac-9bb8-0b14fb7c301e" />
+<img width="1247" height="902" alt="изображение" src="https://github.com/user-attachments/assets/6bac51c8-d2fa-4614-9b10-6a629113527a" />
 
 ## 🤝 Участие в разработке
 
