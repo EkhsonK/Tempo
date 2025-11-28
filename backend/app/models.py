@@ -7,7 +7,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
     
-    # [NEW] Settings columns
+    # Settings
     theme = db.Column(db.String(20), default='dark')
     time_format = db.Column(db.String(10), default='12h')
     background_url = db.Column(db.Text, nullable=True)
@@ -33,6 +33,9 @@ class Todo(db.Model):
     reminder = db.Column(db.String(50), nullable=True)
     repeat = db.Column(db.String(50), nullable=True)
     
+    # [NEW] Stores chat history as a JSON string
+    chat_history = db.Column(db.Text, default='[]')
+    
     subtasks = db.relationship('SubTask', backref='todo', cascade="all, delete-orphan", lazy=True)
     attachments = db.relationship('Attachment', backref='todo', cascade="all, delete-orphan", lazy=True)
 
@@ -48,6 +51,8 @@ class Todo(db.Model):
             'notes': self.notes,
             'reminder': self.reminder,
             'repeat': self.repeat,
+            # [NEW] Parse JSON string back to list
+            'chat_history': json.loads(self.chat_history) if self.chat_history else [],
             'subtasks': [s.to_dict() for s in self.subtasks],
             'attachments': [a.to_dict() for a in self.attachments]
         }

@@ -8,7 +8,7 @@ export async function* streamTaskChat(
     history: ChatMessage[], 
     newMessage: string, 
     activeTask?: ToDoItem,
-    role: AIRole = 'detailed'
+    role: AIRole = 'detailed' // [NEW] Default role
 ) {
     try {
         // 1. Build Task Context
@@ -29,23 +29,22 @@ export async function* streamTaskChat(
             `;
         }
 
-        // 2. Configure Role/Personality
+        // 2. Configure Role/Personality based on selection
         let roleInstruction = "";
         let maxTokens = 1000;
         let temperature = 0.6;
 
         if (role === 'concise') {
             maxTokens = 300; 
-            temperature = 0.3; // Lower creativity for precision
+            temperature = 0.3; 
             roleInstruction = "You are a concise, direct assistant. Give short answers (1-2 sentences). Focus only on the immediate solution. Do not chat casually.";
         } else {
             maxTokens = 1500;
-            temperature = 0.7; // Higher creativity for discussion
+            temperature = 0.7; 
             roleInstruction = "You are a detailed, helpful assistant. Explain your reasoning, offer step-by-step plans, and be encouraging. You can chat casually if appropriate.";
         }
 
-        // 3. System Prompt (Optimized for Llama 3)
-        // We explicitly tell it NOT to output the protocol text.
+        // 3. System Prompt
         const systemPrompt = `
         ${roleInstruction}
         Language: RUSSIAN (Always reply in Russian).
@@ -66,7 +65,6 @@ export async function* streamTaskChat(
         |||ADD_NOTE:Note text|||
         `;
 
-        // 4. Prepare Messages for Backend
         const messages = [
             { role: "system", content: systemPrompt },
             ...history.map(msg => ({
@@ -76,7 +74,7 @@ export async function* streamTaskChat(
             { role: "user", content: newMessage }
         ];
 
-        // 5. Send to Backend
+        // 4. Send to Backend
         const response = await fetch(`${API_URL}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

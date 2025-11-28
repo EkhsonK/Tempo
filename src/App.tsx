@@ -41,12 +41,10 @@ const App: React.FC = () => {
 
     useEffect(() => { setApiUserId(userId); }, [userId]);
 
-    // [CENTRALIZED FETCH FUNCTION]
     const fetchData = useCallback(async () => {
         if (userId) {
             try {
                 setApiUserId(userId); 
-                
                 const [fetchedTodos, fetchedCategories, userSettings] = await Promise.all([
                     api.getTodos(), 
                     api.getCategories(), 
@@ -59,14 +57,13 @@ const App: React.FC = () => {
                     if (userSettings.background_url !== undefined) { setCustomBackground(userSettings.background_url); if(userSettings.background_url) localStorage.setItem('customBackground', userSettings.background_url); else localStorage.removeItem('customBackground'); }
                 }
                 
-                // Process fetched todos to ensure structure consistency
                 const processedTodos = fetchedTodos.map((t: ToDoItem) => ({ 
                     ...t, 
                     priority: t.priority || Priority.NONE,
-                    attachments: t.attachments || [] // CRITICAL: Ensure attachments is never undefined
+                    attachments: t.attachments || [],
+                    chat_history: t.chat_history || [] // [CRITICAL] Ensure array exists
                 }));
 
-                // Optimize state updates to avoid flicker
                 setTodos(prev => {
                     if (prev.length === processedTodos.length && JSON.stringify(prev) === JSON.stringify(processedTodos)) return prev;
                     return processedTodos;
@@ -89,30 +86,16 @@ const App: React.FC = () => {
         }
     }, [isAuthenticated, userId]);
 
-    // [INIT] Initial Load
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    useEffect(() => { fetchData(); }, [fetchData]);
 
-    // [SYNC] Auto-Sync Polling (Every 10s)
     useEffect(() => {
         if (!userId) return; 
-
-        const interval = setInterval(() => {
-            fetchData();
-        }, 10000); 
-
+        const interval = setInterval(() => { fetchData(); }, 10000); 
         return () => clearInterval(interval);
     }, [userId, fetchData]);
 
-    // [UX] Refresh on Tab Change
-    useEffect(() => {
-        if (activeTab === 'tasks') {
-            fetchData();
-        }
-    }, [activeTab, fetchData]);
+    useEffect(() => { if (activeTab === 'tasks') fetchData(); }, [activeTab, fetchData]);
 
-    // [CRUD] Centralized Add Handler
     const handleAddTodo = async (task: any) => {
         const tempId = Date.now();
         const newTodo: ToDoItem = { 
@@ -120,17 +103,17 @@ const App: React.FC = () => {
             id: tempId, 
             completed: false, 
             subtasks: [], 
-            attachments: task.attachments || [], // Ensure initialized
+            attachments: task.attachments || [],
+            chat_history: [],
             lastModified: new Date().toISOString() 
         };
         
-        // Optimistic UI Update
         setTodos(prev => [...prev, newTodo]);
 
         if (userId) {
             try { 
                 await api.addTodo(newTodo); 
-                fetchData(); // Sync to get real server ID
+                fetchData(); 
             } catch (e) { console.error("Add failed", e); }
         }
     };
@@ -149,7 +132,8 @@ const App: React.FC = () => {
         }
     };
 
-    const handleAiTaskUpdate = (taskId: number, action: TaskUpdateAction, value: string) => {
+    // [MODIFIED] Handle AI Commands AND Chat History
+    const handleAiTaskUpdate = (taskId: number, action: TaskUpdateAction, value: any) => {
         const task = todos.find(t => t.id === taskId);
         if (!task) return;
         let updates: Partial<ToDoItem> = {};
@@ -158,15 +142,15 @@ const App: React.FC = () => {
                 const newSub: SubTask = { id: Date.now(), text: value, completed: false };
                 updates = { subtasks: [...(task.subtasks || []), newSub] };
                 break;
-            case 'SET_STATUS': updates = { completed: value.toLowerCase() === 'completed' }; break;
+            case 'SET_STATUS': updates = { completed: value.toString().toLowerCase() === 'completed' }; break;
             case 'SET_PRIORITY': if(['high','medium','low'].includes(value)) updates = { priority: value as Priority }; break;
             case 'ADD_NOTE': updates = { notes: value }; break;
             case 'SET_TITLE': updates = { text: value }; break;
+            case 'SAVE_CHAT': updates = { chat_history: value }; break; // [NEW] Sync chat
         }
         handleUpdateTodo(taskId, updates);
     };
 
-    // [EFFECTS] Persistence
     useEffect(() => { if (userId && isDataLoaded) { const t = setTimeout(() => api.updateUserSettings({ theme, time_format: timeFormat, background_url: customBackground }).catch(console.error), 1000); return () => clearTimeout(t); } }, [theme, timeFormat, customBackground, userId, isDataLoaded]);
     useEffect(() => { if (!userId && isAuthenticated) localStorage.setItem('guest_todos', JSON.stringify(todos)); }, [todos, userId, isAuthenticated]);
     useEffect(() => { if (!userId && isAuthenticated) localStorage.setItem('guest_categories', JSON.stringify(categories)); }, [categories, userId, isAuthenticated]);
@@ -216,9 +200,9 @@ const App: React.FC = () => {
                 timeFormat={timeFormat} 
                 isGuest={!userId} 
                 onRefresh={fetchData} 
-                onAddTodo={handleAddTodo}
-                onUpdateTodo={handleUpdateTodo}
-                onDeleteTodo={handleDeleteTodo}
+                onAddTodo={handleAddTodo} 
+                onUpdateTodo={handleUpdateTodo} 
+                onDeleteTodo={handleDeleteTodo} 
             />;
         }
     };

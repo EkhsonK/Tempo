@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from ..models import Todo, SubTask, Attachment
 from ..extensions import db
 from datetime import datetime
+import json
 
 bp = Blueprint('todos', __name__, url_prefix='/api/todos')
 
@@ -32,21 +33,20 @@ def add_todo():
         priority=data.get('priority', 'none'),
         notes=data.get('notes', ''),
         reminder=data.get('reminder'),
-        repeat=data.get('repeat')
+        repeat=data.get('repeat'),
+        # [NEW] Initialize chat history
+        chat_history=json.dumps(data.get('chat_history', []))
     )
     db.session.add(new_todo)
-    db.session.commit() # Commit to get ID
+    db.session.commit()
 
-    # Handle Relations
     if 'subtasks' in data:
         for s in data['subtasks']:
-            sub = SubTask(todo_id=new_todo.id, text=s['text'], completed=s['completed'])
-            db.session.add(sub)
+            db.session.add(SubTask(todo_id=new_todo.id, text=s['text'], completed=s['completed']))
     
     if 'attachments' in data:
         for a in data['attachments']:
-            att = Attachment(todo_id=new_todo.id, name=a['name'], type=a['type'], url=a['url'])
-            db.session.add(att)
+            db.session.add(Attachment(todo_id=new_todo.id, name=a['name'], type=a['type'], url=a['url']))
             
     db.session.commit()
     return jsonify(new_todo.to_dict())
@@ -60,13 +60,16 @@ def update_todo(todo_id):
     if not todo: return jsonify({"error": "Not found"}), 404
     
     data = request.json
+    
     # Update scalar fields
     for field in ['text', 'completed', 'deadline', 'category', 'priority', 'notes', 'reminder', 'repeat', 'lastModified']:
         if field in data:
             setattr(todo, field, data[field])
+            
+    # [NEW] Update Chat History
+    if 'chat_history' in data:
+        todo.chat_history = json.dumps(data['chat_history'])
     
-    # Update Relations: Strategy -> Wipe and Recreate (Simplest for synchronization)
-    # In a high-load app, you'd diff the lists, but for this scale, recreation ensures perfect sync.
     if 'subtasks' in data:
         SubTask.query.filter_by(todo_id=todo.id).delete()
         for s in data['subtasks']:

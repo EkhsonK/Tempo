@@ -1,5 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { DownloadIcon, UploadIcon, DatabaseIcon, PhotoIcon, ListCheckIcon, PlusIcon, TrashIcon, ClockIcon, UserIcon, GitHubIcon } from './IconComponents';
+import { 
+    DownloadIcon, UploadIcon, DatabaseIcon, PhotoIcon, 
+    ListCheckIcon, PlusIcon, TrashIcon, ClockIcon, 
+    UserIcon, GitHubIcon, CheckIcon 
+} from './IconComponents';
 import { AppBackup, Theme, ToDoItem, TimeFormat } from '../types';
 import WallpaperGalleryModal from './WallpaperGalleryModal';
 import { api } from '../services/api';
@@ -9,195 +13,296 @@ const PaintBrushIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 interface SettingsProps {
-    theme: Theme; setTheme: (theme: Theme) => void; timeFormat: TimeFormat; setTimeFormat: (format: TimeFormat) => void;
-    backupData: Omit<AppBackup, 'taskChatHistories'>; onRestore: (backup: AppBackup) => void;
-    setCustomBackground: (url: string | null) => void; categories: string[]; setCategories: React.Dispatch<React.SetStateAction<string[]>>;
-    todos: ToDoItem[]; setTodos: React.Dispatch<React.SetStateAction<ToDoItem[]>>; onLogout: () => void;
+    theme: Theme; setTheme: (theme: Theme) => void; 
+    timeFormat: TimeFormat; setTimeFormat: (format: TimeFormat) => void;
+    backupData: { todos: ToDoItem[], categories: string[], theme: Theme, timeFormat: TimeFormat, customBackground: string | null };
+    onRestore: (backup: AppBackup) => void;
+    setCustomBackground: (url: string | null) => void; 
+    categories: string[]; setCategories: React.Dispatch<React.SetStateAction<string[]>>;
+    todos: ToDoItem[]; setTodos: React.Dispatch<React.SetStateAction<ToDoItem[]>>; 
+    onLogout: () => void;
+    lastSyncTime?: string;
 }
 
-const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTimeFormat, backupData, onRestore, setCustomBackground, categories, setCategories, todos, setTodos, onLogout }) => {
+const Settings: React.FC<SettingsProps> = ({ theme, setTheme, timeFormat, setTimeFormat, backupData, onRestore, setCustomBackground, categories, setCategories, todos, setTodos, onLogout, lastSyncTime }) => {
     const importInputRef = useRef<HTMLInputElement>(null);
     const bgUploadRef = useRef<HTMLInputElement>(null);
-    const [newCategory, setNewCategory] = useState('');
+    
+    const [newCategoryName, setNewCategoryName] = useState('');
     const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
     const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+    // === DYNAMIC STYLES FOR REACT COMPONENTS ===
+    const getThemeStyles = () => {
+        switch (theme) {
+            case 'light':
+                // Pro Light: Clean Slate/Indigo palette
+                return {
+                    container: 'text-slate-800',
+                    card: 'bg-white border-slate-200 shadow-sm',
+                    input: 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-indigo-500',
+                    button: 'bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200',
+                    icon: 'text-indigo-500',
+                    subtext: 'text-slate-500',
+                    accent: 'bg-indigo-600 text-white hover:bg-indigo-700',
+                    itemBg: 'bg-white border-slate-100 hover:bg-slate-50'
+                };
+            case 'forest':
+                // Forest: Deep Emerald palette (Matches Android)
+                return {
+                    container: 'text-emerald-50',
+                    card: 'bg-[#022C22] border-[#065F46] shadow-lg',
+                    input: 'bg-[#064E3B] border-[#065F46] text-emerald-100 placeholder-emerald-700 focus:border-emerald-500',
+                    button: 'bg-[#064E3B] text-emerald-300 hover:bg-[#065F46] border-[#065F46]',
+                    icon: 'text-emerald-400',
+                    subtext: 'text-emerald-400/60',
+                    accent: 'bg-emerald-600 text-white hover:bg-emerald-500',
+                    itemBg: 'bg-[#064E3B]/50 border-[#065F46] hover:bg-[#064E3B]'
+                };
+            case 'midnight':
+                return {
+                    container: 'text-indigo-50',
+                    card: 'bg-[#0f172a] border-[#1e293b] shadow-lg',
+                    input: 'bg-[#020617] border-[#1e293b] text-indigo-100 placeholder-indigo-700 focus:border-indigo-500',
+                    button: 'bg-[#1e293b] text-indigo-300 hover:bg-[#334155] border-[#1e293b]',
+                    icon: 'text-indigo-400',
+                    subtext: 'text-indigo-400/60',
+                    accent: 'bg-indigo-600 text-white hover:bg-indigo-500',
+                    itemBg: 'bg-[#1e293b] border-[#334155]'
+                };
+            case 'neon':
+                return {
+                    container: 'text-lime-50',
+                    card: 'bg-black border-lime-900/50 shadow-[0_0_15px_rgba(132,204,22,0.1)]',
+                    input: 'bg-[#111] border-lime-900/50 text-lime-400 placeholder-lime-900 focus:border-lime-500',
+                    button: 'bg-[#111] text-lime-600 hover:text-lime-400 border-lime-900/30',
+                    icon: 'text-lime-400',
+                    subtext: 'text-lime-700',
+                    accent: 'bg-lime-500 text-black hover:bg-lime-400',
+                    itemBg: 'bg-[#111] border-lime-900/30'
+                };
+            case 'dark':
+            default:
+                return {
+                    container: 'text-white',
+                    card: 'bg-[#1E1E1E] border-white/5 shadow-lg',
+                    input: 'bg-[#2C2C2C] border-white/10 text-white placeholder-gray-500 focus:border-blue-500',
+                    button: 'bg-[#2C2C2C] text-gray-400 hover:bg-white/5 hover:text-white border-white/5',
+                    icon: 'text-blue-500',
+                    subtext: 'text-gray-400',
+                    accent: 'bg-blue-600 text-white hover:bg-blue-500',
+                    itemBg: 'bg-[#2C2C2C] border-white/5'
+                };
+        }
+    };
+
+    const styles = getThemeStyles();
 
     const syncSetting = async (key: string, value: string | null) => { try { await api.updateUserSettings({ [key]: value }); } catch (e) { console.error(`Sync error ${key}`, e); } };
     const handleThemeChange = (t: Theme) => { setTheme(t); syncSetting('theme', t); };
     const handleBackgroundChange = (url: string | null) => { setCustomBackground(url); syncSetting('background_url', url); };
-    const handleAddCategory = async () => { if (newCategory.trim() && !categories.includes(newCategory.trim())) { setCategories(p => [...p, newCategory.trim()]); setNewCategory(''); try { await api.addCategory(newCategory.trim()); } catch(e){} } };
-    const executeDeleteCategory = async (cat: string) => { setTodos(todos.filter(t => t.category !== cat)); setCategories(p => p.filter(c => c !== cat)); setConfirmingDelete(null); try{ await api.deleteCategory(cat); }catch(e){} };
     
-    const handleExport = () => { const link = document.createElement("a"); link.href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify({ ...backupData, taskChatHistories: JSON.parse(localStorage.getItem('taskChatHistories')||'{}') }, null, 2))}`; link.download = `tempo-backup.json`; link.click(); };
+    const handleAddCategory = async () => { 
+        const trimmed = newCategoryName.trim();
+        if (trimmed && !categories.includes(trimmed)) { 
+            setCategories(p => [...p, trimmed]); 
+            setNewCategoryName(''); 
+            try { await api.addCategory(trimmed); } catch(e){ console.error(e); } 
+        } 
+    };
+
+    const executeDeleteCategory = async (cat: string) => { 
+        setCategories(p => p.filter(c => c !== cat)); 
+        setConfirmingDelete(null); 
+        try { await api.deleteCategory(cat); } catch(e){} 
+    };
+    
+    const handleExport = () => {
+        const link = document.createElement("a");
+        // Ensure histories are included in export
+        const exportObj = { 
+            ...backupData, 
+            taskChatHistories: JSON.parse(localStorage.getItem('taskChatHistories') || '{}') 
+        };
+        link.href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(exportObj, null, 2))}`;
+        link.download = `tempo-backup-${new Date().toISOString().slice(0,10)}.json`;
+        link.click();
+    };
+
     const handleImportClick = () => importInputRef.current?.click();
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
         const file = e.target.files?.[0]; if (!file) return;
         if (!window.confirm("Импорт перезапишет данные. Продолжить?")) return;
-        const r = new FileReader(); r.onload = (ev) => { try { onRestore(JSON.parse(ev.target?.result as string)); } catch(e){ alert('Ошибка файла'); } }; r.readAsText(file); e.target.value='';
+        const r = new FileReader(); 
+        r.onload = (ev) => { 
+            try { onRestore(JSON.parse(ev.target?.result as string)); } 
+            catch(e){ alert('Ошибка файла'); } 
+        }; 
+        r.readAsText(file); 
+        e.target.value='';
     };
+    
     const handleBackgroundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
          const file = e.target.files?.[0]; if(!file) return;
-         const formData = new FormData(); formData.append('file', file);
-         try { const res = await fetch('http://127.0.0.1:5000/api/upload', { method: 'POST', body: formData }); if(res.ok) { const d = await res.json(); handleBackgroundChange(`url(${d.url})`); } } catch(e){ console.error(e); }
-         e.target.value = '';
+         try { const data = await api.uploadFile(file); handleBackgroundChange(`url(${data.url})`); } catch(e){ alert("Ошибка загрузки"); } e.target.value = '';
     };
 
+    // Theme Previews for UI
+    const themePreviews: Record<string, { bg: string, header: string, accent: string, label: string }> = {
+        light: { bg: 'bg-slate-100', header: 'bg-white', accent: 'bg-indigo-500', label: 'Pro Light' },
+        dark: { bg: 'bg-[#121212]', header: 'bg-[#1E1E1E]', accent: 'bg-blue-600', label: 'Deep Dark' },
+        midnight: { bg: 'bg-[#020617]', header: 'bg-[#0f172a]', accent: 'bg-indigo-500', label: 'Midnight' },
+        forest: { bg: 'bg-[#022C22]', header: 'bg-[#064E3B]', accent: 'bg-emerald-500', label: 'Forest' },
+        neon: { bg: 'bg-black', header: 'bg-[#111]', accent: 'bg-lime-500', label: 'Neon' },
+    };
+    
+    // REMOVED 'sunset', ADDED 'forest'
+    const allThemes: Theme[] = ['light', 'dark', 'midnight', 'forest', 'neon'];
+
     return (
-        <div className="max-w-5xl mx-auto pb-12 space-y-8 animate-fade-in">
-            <h1 className="text-3xl font-bold text-brand-text-primary pl-2">Настройки</h1>
+        <div className={`max-w-5xl mx-auto pb-32 space-y-5 animate-fade-in px-4 pt-6 ${styles.container}`}>
+            
+            {/* Header */}
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Настройки</h1>
+                {lastSyncTime && (
+                    <div className="text-right">
+                        <p className={`text-[10px] font-bold uppercase tracking-wider ${styles.subtext}`}>Синхронизация</p>
+                        <p className={`text-xs font-mono opacity-80`}>{lastSyncTime}</p>
+                    </div>
+                )}
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex justify-end mb-2">
+                 <button onClick={() => { handleThemeChange('dark'); handleBackgroundChange(null); }} className="text-xs text-red-400 bg-red-500/10 px-4 py-2 rounded-xl font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Сброс темы</button>
+            </div>
+
+            {/* THEME SELECTOR */}
+            <div className={`border p-6 rounded-3xl ${styles.card}`}>
+                <div className="flex items-center gap-2 mb-5"><PaintBrushIcon className={`w-5 h-5 ${styles.icon}`} /><h3 className="font-bold text-lg">Оформление</h3></div>
                 
-                {/* THEME SELECTOR */}
-                <div className="glass-panel p-6 rounded-3xl md:col-span-2">
-                    <div className="flex items-center gap-3 mb-4 text-brand-text-primary">
-                        <PaintBrushIcon className="w-6 h-6 text-brand-accent" />
-                        <h3 className="text-xl font-bold">Тема оформления</h3>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-                        {[
-                            { id: 'light', name: 'Pro Light', bg: 'bg-white', border: 'border-gray-200' },
-                            { id: 'dark', name: 'Deep Dark', bg: 'bg-gray-900', border: 'border-gray-700' },
-                            { id: 'midnight', name: 'Midnight', bg: 'bg-indigo-950', border: 'border-indigo-800' },
-                            { id: 'sunset', name: 'Sunset', bg: 'bg-orange-900', border: 'border-orange-800' },
-                            { id: 'neon', name: 'Neon', bg: 'bg-black', border: 'border-lime-400' }
-                        ].map(t => (
-                            <button key={t.id} onClick={() => handleThemeChange(t.id as Theme)} className={`relative h-20 rounded-2xl border-2 transition-all overflow-hidden group ${theme === t.id ? 'border-brand-primary shadow-glow scale-[1.05]' : 'border-transparent opacity-70 hover:opacity-100 hover:scale-[1.02]'}`}>
-                                <div className={`absolute inset-0 ${t.bg}`}></div>
-                                <span className={`absolute bottom-2 left-3 font-bold text-sm ${t.id === 'light' ? 'text-gray-800' : 'text-white'} ${t.id === 'neon' ? 'text-lime-400' : ''}`}>{t.name}</span>
-                                {theme === t.id && <div className="absolute top-2 right-2 bg-brand-primary text-white p-1 rounded-full"><svg className="w-3 h-3" viewBox="0 0 20 20" fill="currentColor" style={{ color: 'var(--brand-text-on-primary)' }}><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg></div>}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* CATEGORY MANAGER */}
-                <div className="glass-panel p-6 rounded-3xl row-span-2 flex flex-col">
-                    <div className="flex items-center gap-3 mb-4">
-                        <ListCheckIcon className="w-6 h-6 text-brand-accent" />
-                        <h3 className="text-xl font-bold">Категории</h3>
-                    </div>
-                    
-                    <div className="flex gap-2 mb-4">
-                        <input 
-                            type="text" 
-                            value={newCategory} 
-                            onChange={e => setNewCategory(e.target.value)} 
-                            onKeyPress={(e) => e.key === 'Enter' && handleAddCategory()}
-                            placeholder="Новая категория..." 
-                            className="flex-grow bg-brand-surface border border-brand-gray-700 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-brand-primary transition-colors text-brand-text-primary"
-                        />
-                        <button onClick={handleAddCategory} className="bg-brand-primary p-2 rounded-xl hover:bg-brand-secondary transition-colors" style={{ color: 'var(--brand-text-on-primary)' }}><PlusIcon className="w-5 h-5"/></button>
-                    </div>
-
-                    <div className="flex-grow overflow-y-auto custom-scrollbar pr-2 space-y-2 max-h-[400px]">
-                        {categories.map(cat => (
-                            <div key={cat} className="flex justify-between items-center p-3 rounded-xl bg-brand-surface hover:bg-brand-surface-solid/20 transition-colors border border-brand-gray-700/30">
-                                {confirmingDelete === cat ? (
-                                    <div className="flex justify-between w-full items-center animate-fade-in">
-                                        <span className="text-xs text-red-400 font-bold">Удалить?</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => executeDeleteCategory(cat)} className="text-xs bg-red-500 text-white px-2 py-1 rounded">Да</button>
-                                            <button onClick={() => setConfirmingDelete(null)} className="text-xs bg-gray-600 text-white px-2 py-1 rounded">Нет</button>
-                                        </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {allThemes.map(t => {
+                        const preview = themePreviews[t] || themePreviews.dark;
+                        const isActive = theme === t;
+                        return (
+                            <button 
+                                key={t} 
+                                onClick={() => handleThemeChange(t)} 
+                                className={`group relative w-full aspect-[4/3] rounded-2xl overflow-hidden transition-all duration-300 ${isActive ? `ring-2 ${styles.icon} scale-[1.02] shadow-xl` : 'ring-1 ring-white/10 hover:scale-[1.01]'}`}
+                            >
+                                {/* Preview Construction */}
+                                <div className={`absolute inset-0 flex flex-col ${preview.bg}`}>
+                                    <div className={`h-1/3 w-full ${preview.header} flex items-center px-3 gap-2`}>
+                                        <div className={`w-6 h-1.5 rounded-full ${isActive ? 'bg-current opacity-100' : 'bg-current opacity-50'}`}></div>
+                                        <div className={`w-2 h-2 rounded-full ml-auto ${preview.accent}`}></div>
                                     </div>
-                                ) : (
-                                    <>
-                                        <span className="font-medium text-brand-text-primary text-sm">{cat}</span>
-                                        {cat !== 'Общее' && cat !== 'General' && <button onClick={() => setConfirmingDelete(cat)} className="text-brand-text-secondary hover:text-red-400"><TrashIcon className="w-4 h-4"/></button>}
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                    </div>
+                                    <div className="flex-1 p-3 space-y-2">
+                                        <div className="w-3/4 h-1.5 rounded-full bg-current opacity-20"></div>
+                                        <div className="w-1/2 h-1.5 rounded-full bg-current opacity-10"></div>
+                                    </div>
+                                </div>
+                                {/* Label Overlay */}
+                                <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-2 px-3 flex justify-between items-center">
+                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${t === 'neon' ? 'text-lime-400' : 'text-white'}`}>{preview.label}</span>
+                                    {isActive && <CheckIcon className="w-3.5 h-3.5 text-white"/>}
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
 
-                {/* WALLPAPER & TIME */}
-                <div className="glass-panel p-6 rounded-3xl space-y-6">
-                     <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <PhotoIcon className="w-6 h-6 text-brand-accent" />
-                            <h3 className="text-xl font-bold">Обои</h3>
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            <button onClick={() => setIsGalleryOpen(true)} className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-3 rounded-xl font-bold text-sm shadow-lg hover:scale-[1.02] transition-transform col-span-3">Открыть Галерею</button>
-                            <button onClick={() => bgUploadRef.current?.click()} className="bg-brand-surface border border-brand-gray-700 text-brand-text-primary py-2 rounded-xl text-xs font-medium hover:bg-brand-gray-700 transition-colors">Загрузить</button>
-                            <button onClick={() => handleBackgroundChange(null)} className="bg-brand-surface border border-brand-gray-700 text-brand-text-primary py-2 rounded-xl text-xs font-medium hover:bg-brand-gray-700 transition-colors col-span-2">Сбросить</button>
-                        </div>
-                     </div>
-                     
-                     {/* IMPROVED TIME FORMAT UI */}
-                     <div className="pt-4 border-t border-brand-gray-700">
-                        <div className="flex items-center gap-3 mb-4 text-brand-text-secondary">
-                            <ClockIcon className="w-5 h-5 text-brand-accent"/> <span className="font-medium text-sm">Формат времени</span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <button 
-                                onClick={() => { setTimeFormat('12h'); syncSetting('time_format', '12h'); }} 
-                                className={`
-                                    relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden
-                                    ${timeFormat === '12h' 
-                                        // Selected State: Brand Primary BG + White Text (ensured via style)
-                                        ? 'border-brand-primary bg-brand-primary shadow-glow scale-[1.02]' 
-                                        // Unselected State: Surface BG + Secondary Text
-                                        : 'border-brand-gray-700 bg-brand-surface text-brand-text-secondary hover:border-brand-text-primary hover:bg-brand-surface-solid/20'}
-                                `}
-                                // FORCE TEXT COLOR for Selected State to avoid theme conflicts
-                                style={timeFormat === '12h' ? { color: 'var(--brand-text-on-primary)' } : {}}
-                            >
-                                <span className="text-2xl font-bold">12H</span>
-                                <span className="text-xs opacity-80">1:30 PM</span>
-                                {timeFormat === '12h' && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"></div>}
-                            </button>
-                            
-                            <button 
-                                onClick={() => { setTimeFormat('24h'); syncSetting('time_format', '24h'); }} 
-                                className={`
-                                    relative p-4 rounded-2xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-1 overflow-hidden
-                                    ${timeFormat === '24h' 
-                                        ? 'border-brand-primary bg-brand-primary shadow-glow scale-[1.02]' 
-                                        : 'border-brand-gray-700 bg-brand-surface text-brand-text-secondary hover:border-brand-text-primary hover:bg-brand-surface-solid/20'}
-                                `}
-                                style={timeFormat === '24h' ? { color: 'var(--brand-text-on-primary)' } : {}}
-                            >
-                                <span className="text-2xl font-bold">24H</span>
-                                <span className="text-xs opacity-80">13:30</span>
-                                {timeFormat === '24h' && <div className="absolute top-2 right-2 w-2 h-2 bg-white rounded-full"></div>}
-                            </button>
-                        </div>
-                     </div>
-                </div>
-
-                {/* DATA & ACCOUNT */}
-                <div className="glass-panel p-6 rounded-3xl flex flex-col gap-4 justify-between">
-                    <div className="flex items-center gap-3">
-                        <DatabaseIcon className="w-6 h-6 text-brand-accent" />
-                        <h3 className="text-xl font-bold">Данные</h3>
-                    </div>
-                    <div className="flex gap-3">
-                        <button onClick={handleExport} className="flex-1 flex items-center justify-center gap-2 bg-brand-surface hover:bg-brand-gray-700 border border-brand-gray-700 py-2 rounded-xl text-sm font-medium transition-colors"><DownloadIcon className="w-4 h-4"/> Экспорт</button>
-                        <button onClick={handleImportClick} className="flex-1 flex items-center justify-center gap-2 bg-brand-surface hover:bg-brand-gray-700 border border-brand-gray-700 py-2 rounded-xl text-sm font-medium transition-colors"><UploadIcon className="w-4 h-4"/> Импорт</button>
-                    </div>
-                     <div className="pt-4 border-t border-brand-gray-700 flex justify-between items-center">
-                        <div className="flex items-center gap-2 text-red-400"><UserIcon className="w-5 h-5"/> <span className="text-sm font-bold">Аккаунт</span></div>
-                        <button onClick={onLogout} className="text-xs bg-red-500/10 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/20 transition-colors font-bold">Выйти</button>
+                <div className={`mt-6 border-t pt-5 flex justify-between items-center ${theme === 'light' ? 'border-slate-200' : 'border-white/5'}`}>
+                    <div className={`flex items-center gap-2 ${styles.subtext}`}><ClockIcon className="w-4 h-4"/> <span className="text-xs font-bold uppercase">Формат времени</span></div>
+                    <div className={`flex rounded-xl p-1 border ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-black/30 border-white/5'}`}>
+                        <button onClick={() => { setTimeFormat('12h'); syncSetting('time_format', '12h'); }} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${timeFormat === '12h' ? styles.accent : `${styles.subtext} hover:text-current`}`}>12h</button>
+                        <button onClick={() => { setTimeFormat('24h'); syncSetting('time_format', '24h'); }} className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${timeFormat === '24h' ? styles.accent : `${styles.subtext} hover:text-current`}`}>24h</button>
                     </div>
                 </div>
             </div>
 
-            {/* COMPACT DEVELOPER CARD */}
-            <div className="flex justify-center pb-6">
-                <a 
-                    href="https://github.com/EkhsonK/Tempo-Task-Manager" 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="inline-flex items-center gap-2 bg-brand-surface/50 hover:bg-brand-surface border border-brand-gray-700/50 rounded-full px-4 py-2 transition-all duration-300 hover:scale-105 group"
-                >
-                    <GitHubIcon className="w-4 h-4 text-brand-text-secondary group-hover:text-brand-primary transition-colors"/>
-                    <span className="text-xs font-bold text-brand-text-secondary group-hover:text-brand-primary">EkhsonK</span>
-                    <span className="w-1 h-1 rounded-full bg-brand-gray-700"></span>
-                    <span className="text-[10px] text-brand-text-secondary/70 font-medium">v3.0.0</span>
+            {/* CATEGORIES */}
+            <div className={`border p-6 rounded-3xl ${styles.card}`}>
+                <div className="flex items-center gap-2 mb-5"><ListCheckIcon className={`w-5 h-5 ${styles.icon}`} /><h3 className="font-bold text-lg">Категории</h3></div>
+                
+                <div className="flex flex-wrap gap-2.5 mb-6">
+                    {categories.map(cat => {
+                        const count = todos.filter(t => t.category === cat).length;
+                        const isDeleting = confirmingDelete === cat;
+                        
+                        return (
+                            <div key={cat} className={`flex items-center gap-2 pl-4 pr-2 py-2 rounded-2xl border transition-all ${isDeleting ? 'border-red-500/50 bg-red-500/10' : `${styles.itemBg}`}`}>
+                                <span className={`text-sm font-medium ${isDeleting ? 'text-red-400' : ''}`}>{cat}</span>
+                                {!isDeleting && <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${theme === 'light' ? 'bg-slate-200 text-slate-600' : 'bg-white/10 text-gray-400'}`}>{count}</span>}
+                                
+                                {cat !== 'Общее' && (
+                                    <button 
+                                        onClick={() => isDeleting ? executeDeleteCategory(cat) : setConfirmingDelete(cat)}
+                                        className={`p-1.5 rounded-lg transition-colors ${isDeleting ? 'bg-red-500 text-white animate-pulse' : `${styles.subtext} hover:text-red-400`}`}
+                                    >
+                                        {isDeleting ? <span className="text-xs font-bold px-1">Подтвердить</span> : <TrashIcon className="w-4 h-4"/>}
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                    <label className={`text-xs font-bold uppercase ml-1 ${styles.subtext}`}>Добавить новую</label>
+                    
+                    <div className="flex gap-2">
+                        <input 
+                            type="text" 
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                            placeholder="Название..."
+                            className={`flex-grow border rounded-2xl px-5 py-3 text-base outline-none transition-all shadow-sm ${styles.input}`}
+                        />
+                        <button 
+                            onClick={handleAddCategory}
+                            disabled={!newCategoryName.trim()}
+                            className={`
+                                px-5 rounded-2xl flex items-center justify-center transition-all shadow-md active:scale-95
+                                ${newCategoryName.trim() ? styles.accent : `${styles.itemBg} opacity-50 cursor-not-allowed`}
+                            `}
+                        >
+                            <PlusIcon className="w-6 h-6"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ACTIONS GRID */}
+            <div className="grid grid-cols-3 gap-4">
+                <button onClick={() => setIsGalleryOpen(true)} className={`border p-5 rounded-3xl flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform group ${styles.card} hover:opacity-90`}>
+                    <div className="p-3 bg-purple-500/10 rounded-2xl"><PhotoIcon className="w-6 h-6 text-purple-400"/></div>
+                    <span className={`text-xs font-bold ${styles.subtext} group-hover:text-current`}>Обои</span>
+                </button>
+                <button onClick={handleExport} className={`border p-5 rounded-3xl flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform group ${styles.card} hover:opacity-90`}>
+                    <div className="p-3 bg-blue-500/10 rounded-2xl"><DownloadIcon className="w-6 h-6 text-blue-400"/></div>
+                    <span className={`text-xs font-bold ${styles.subtext} group-hover:text-current`}>Экспорт</span>
+                </button>
+                <button onClick={handleImportClick} className={`border p-5 rounded-3xl flex flex-col items-center justify-center gap-3 active:scale-95 transition-transform group ${styles.card} hover:opacity-90`}>
+                    <div className="p-3 bg-green-500/10 rounded-2xl"><UploadIcon className="w-6 h-6 text-green-400"/></div>
+                    <span className={`text-xs font-bold ${styles.subtext} group-hover:text-current`}>Импорт</span>
+                </button>
+            </div>
+
+            {/* DATA & LOGOUT */}
+            <div className={`border p-5 rounded-3xl flex justify-between items-center ${styles.card}`}>
+                <div className="flex items-center gap-3 text-red-400">
+                    <div className="p-2 bg-red-500/10 rounded-xl"><UserIcon className="w-5 h-5"/></div>
+                    <span className="text-sm font-bold">Управление аккаунтом</span>
+                </div>
+                <button onClick={onLogout} className="text-xs bg-red-500/10 text-red-400 px-5 py-2.5 rounded-xl border border-red-500/20 hover:bg-red-500/20 transition-colors font-bold">Выйти</button>
+            </div>
+
+            {/* DEVELOPER FOOTER */}
+            <div className={`text-center pt-8 pb-4 opacity-40 ${styles.subtext}`}>
+                <a href="https://github.com/EkhsonK/Tempo-Task-Manager" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-current transition-colors">
+                    <GitHubIcon className="w-4 h-4"/> <span className="text-xs font-bold">Tempo v3.0.0</span>
                 </a>
             </div>
 

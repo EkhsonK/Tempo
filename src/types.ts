@@ -18,6 +18,16 @@ export interface Attachment {
     url: string; 
 }
 
+export enum MessageAuthor {
+  USER = 'user',
+  AI = 'ai',
+}
+
+export interface ChatMessage {
+  author: MessageAuthor;
+  text: string;
+}
+
 export interface ToDoItem {
   id: number;
   text: string;
@@ -31,6 +41,7 @@ export interface ToDoItem {
   attachments?: Attachment[];
   reminder?: string;
   repeat?: string;
+  chat_history?: ChatMessage[]; 
 }
 
 export enum ToDoSort {
@@ -40,26 +51,16 @@ export enum ToDoSort {
     TEXT_DESC = 'text-desc',
 }
 
-export enum MessageAuthor {
-  USER = 'user',
-  AI = 'ai',
-}
-
-export interface ChatMessage {
-  author: MessageAuthor;
-  text: string;
-}
-
 export type ActiveTab = 'tasks' | 'chat' | 'calendar' | 'me' | 'settings';
 
-export type Theme = 'light' | 'dark' | 'midnight' | 'forest';
+// [FIXED] Added 'neon' to the Theme type
+export type Theme = 'light' | 'dark' | 'midnight' | 'forest' | 'neon';
+
 export type TimeFormat = '12h' | '24h';
 
-// [FIX] Ensure this is exported
 export type AIRole = 'concise' | 'detailed';
 
-// [FIX] Ensure this is exported for AI commands
-export type TaskUpdateAction = 'ADD_SUBTASK' | 'SET_PRIORITY' | 'SET_STATUS' | 'ADD_NOTE' | 'SET_TITLE';
+export type TaskUpdateAction = 'ADD_SUBTASK' | 'SET_PRIORITY' | 'SET_STATUS' | 'ADD_NOTE' | 'SET_TITLE' | 'SAVE_CHAT';
 
 export interface AppBackup {
     todos: ToDoItem[];
@@ -67,6 +68,8 @@ export interface AppBackup {
     theme: Theme;
     aiRole?: AIRole;
     taskChatHistories: { [key: number]: ChatMessage[] };
+    timeFormat?: TimeFormat; // Added to match Settings usage
+    customBackground?: string | null; // Added to match Settings usage
 }
 
 export interface GroundingChunk {

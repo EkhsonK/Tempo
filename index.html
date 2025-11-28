@@ -7,7 +7,8 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234F46E5'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z' clip-rule='evenodd'/%3E%3C/svg%3E" />
     <meta name="google-signin-client_id" content="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com">
     
-    <!-- TAILWIND + CONFIGURATION -->
+    <meta name="theme-color" content="#F1F5F9" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -39,34 +40,65 @@
     <style>
       :root { --transition-speed: 0.4s; }
       
-      /* --- 1. PRO LIGHT --- */
+      /* ========================================= */
+      /* 1. PRO LIGHT                              */
+      /* ========================================= */
       :root {
-        --brand-primary: #4F46E5;
+        --brand-primary: #4F46E5; 
         --brand-secondary: #818CF8;
-        --brand-background: #F8FAFC;
+        --brand-background: #F1F5F9; 
         --brand-surface-rgb: 255, 255, 255;
         --brand-surface-solid: #FFFFFF;
-        --brand-text-primary: #0F172A;
-        --brand-text-secondary: #64748B;
-        --brand-accent: #0EA5E9;
-        --brand-accent-rgb: 14, 165, 233;
-        --brand-gray-800: #E2E8F0;
-        --brand-gray-700: #CBD5E1;
-        --glass-opacity: 1; 
-        --glass-border-opacity: 0.8; 
-        --bg-gradient: #F8FAFC; 
-        --shadow-color: 148, 163, 184;
-        --brand-text-on-primary: #FFFFFF;
-        --brand-chip-bg: #F1F5F9;
-        --brand-chip-border: #E2E8F0;
+        --brand-text-primary: #0F172A; 
+        --brand-text-secondary: #64748B; 
+        --brand-accent: #0284C7; 
+        --brand-accent-rgb: 2, 132, 199;
         
-        --shadow-glow: none; 
+        --brand-gray-800: #E2E8F0; 
+        --brand-gray-700: #CBD5E1; 
+        
+        --glass-opacity: 0.85; 
+        --glass-border-opacity: 1.0; 
+        
+        --bg-gradient: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%); 
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #E2E8F0; 
+        
+        --shadow-glow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
         --icon-filter: none;
         text-shadow: none !important;
-        --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
       }
 
-      /* --- 2. NEON --- */
+      /* ========================================= */
+      /* 2. FOREST (Fully Synced with Android)     */
+      /* ========================================= */
+      html.forest {
+        --brand-primary: #10B981; /* Emerald 500 */
+        --brand-secondary: #34D399; 
+        --brand-background: #022C22; /* Deep Emerald 950 */
+        --brand-surface-rgb: 6, 78, 59; /* Emerald 900 base */
+        --brand-surface-solid: #064E3B; /* Emerald 900 solid */
+        --brand-text-primary: #ECFDF5; /* Emerald 50 */
+        --brand-text-secondary: #6EE7B7; /* Emerald 300 */
+        --brand-accent: #059669; /* Emerald 600 */
+        --brand-accent-rgb: 5, 150, 105;
+        
+        --brand-gray-800: #065F46; /* Emerald 800 */
+        --brand-gray-700: #047857; /* Emerald 700 */
+        
+        --glass-opacity: 0.85;
+        --glass-border-opacity: 0.2;
+        --bg-gradient: radial-gradient(at 50% 0%, #065F46 0%, #022C22 80%);
+        --brand-text-on-primary: #FFFFFF;
+        --brand-chip-bg: #065F46;
+        
+        --shadow-glow: 0 0 20px rgba(16, 185, 129, 0.25);
+        --icon-filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.3));
+        --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      }
+
+      /* --- 3. NEON --- */
       html.neon {
         --brand-primary: #ccff00; 
         --brand-secondary: #39ff14; 
@@ -82,16 +114,14 @@
         --glass-opacity: 0.9;
         --glass-border-opacity: 0.5;
         --bg-gradient: radial-gradient(circle at center, #111111 0%, #000000 100%);
-        --shadow-color: 204, 255, 0;
         --brand-text-on-primary: #000000; 
         --brand-chip-bg: #333333;
-        --brand-chip-border: #ccff00;
         --shadow-glow: 0 0 10px var(--brand-primary);
         --icon-filter: drop-shadow(0 0 2px rgba(204, 255, 0, 0.5));
         --card-shadow: 0 4px 30px 0 rgba(204, 255, 0, 0.15);
       }
 
-      /* --- 3. DEEP DARK --- */
+      /* --- 4. DEEP DARK --- */
       html.dark {
         --brand-primary: #3B82F6; 
         --brand-secondary: #60A5FA;
@@ -109,13 +139,12 @@
         --bg-gradient: linear-gradient(to bottom, #020617, #0f172a);
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #1E293B;
-        --brand-chip-border: #334155;
         --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.3);
         --icon-filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));
         --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
       }
 
-      /* --- 4. MIDNIGHT --- */
+      /* --- 5. MIDNIGHT --- */
       html.midnight {
         --brand-primary: #8B5CF6;
         --brand-secondary: #A78BFA;
@@ -132,32 +161,8 @@
         --bg-gradient: radial-gradient(circle at top right, #2e1065, #172554);
         --brand-text-on-primary: #FFFFFF;
         --brand-chip-bg: #312E81;
-        --brand-chip-border: #4338CA;
         --shadow-glow: 0 0 15px rgba(139, 92, 246, 0.3);
         --icon-filter: drop-shadow(0 0 5px rgba(139, 92, 246, 0.4));
-        --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
-      }
-
-       /* --- 5. SUNSET --- */
-       html.sunset {
-        --brand-primary: #F43F5E; 
-        --brand-secondary: #FB923C;
-        --brand-surface-rgb: 80, 20, 40;
-        --brand-surface-solid: #501428;
-        --brand-text-primary: #FFF1F2;
-        --brand-text-secondary: #FDA4AF;
-        --brand-accent: #FBBF24;
-        --brand-accent-rgb: 251, 191, 36;
-        --brand-gray-800: #9F1239;
-        --brand-gray-700: #BE123C;
-        --glass-opacity: 0.7;
-        --glass-border-opacity: 0.5;
-        --bg-gradient: linear-gradient(135deg, #4c0519 0%, #7c2d12 50%, #be123c 100%);
-        --brand-text-on-primary: #FFFFFF;
-        --brand-chip-bg: #881337;
-        --brand-chip-border: #9F1239;
-        --shadow-glow: 0 0 15px rgba(244, 63, 94, 0.3);
-        --icon-filter: drop-shadow(0 0 5px rgba(244, 63, 94, 0.4));
         --card-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.3);
       }
 
@@ -179,7 +184,7 @@
 
       input, textarea, select {
         color: var(--brand-text-primary) !important;
-        background-color: rgba(var(--brand-surface-rgb), 0.5) !important;
+        background-color: rgba(var(--brand-surface-rgb), 0.7) !important;
         border: 1px solid var(--brand-gray-700) !important;
       }
       input::placeholder, textarea::placeholder {
