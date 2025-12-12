@@ -40,8 +40,6 @@ Tempo — это умный менеджер задач на базе искус
 2.  **Настройка Frontend:**
     ```bash
     npm install
-    # Создайте файл .env.local в корне проекта и добавьте ваш API ключ:
-    # VITE_GEMINI_API_KEY=ваш_api_ключ_здесь
     npm run dev
     ```
 
